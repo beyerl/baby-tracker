@@ -50,6 +50,9 @@ class EventRepository(private val dao: EventDao) {
     /** Every stored event, oldest first – for the Excel export. */
     suspend fun getAll(): List<Event> = dao.getAll()
 
+    /** Reactive stream of all events, oldest first – for the analytics view. */
+    fun observeAll(): Flow<List<Event>> = dao.observeAll()
+
     suspend fun update(event: Event) = dao.update(event)
 
     suspend fun delete(event: Event) = dao.delete(event)

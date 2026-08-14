@@ -30,4 +30,8 @@ interface EventDao {
     /** All events, oldest first – used for the full data export. */
     @Query("SELECT * FROM events ORDER BY startTime ASC")
     suspend fun getAll(): List<Event>
+
+    /** All events, oldest first, observed reactively – used for analytics. */
+    @Query("SELECT * FROM events ORDER BY startTime ASC")
+    fun observeAll(): Flow<List<Event>>
 }

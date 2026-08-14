@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -64,6 +65,7 @@ private const val XLSX_MIME_TYPE =
 fun MonthScreen(
     repository: EventRepository,
     onDayClick: (LocalDate) -> Unit,
+    onAnalyticsClick: () -> Unit,
 ) {
     val vm: MonthViewModel = viewModel(factory = MonthViewModel.Factory(repository))
     val month by vm.month.collectAsState()
@@ -92,6 +94,9 @@ fun MonthScreen(
             TopAppBar(
                 title = { Text(title) },
                 actions = {
+                    IconButton(onClick = onAnalyticsClick) {
+                        Icon(Icons.Filled.ShowChart, contentDescription = "Auswertung")
+                    }
                     IconButton(onClick = { exportLauncher.launch("baby-tracker-$today.xlsx") }) {
                         Icon(Icons.Filled.FileDownload, contentDescription = "Als Excel exportieren")
                     }

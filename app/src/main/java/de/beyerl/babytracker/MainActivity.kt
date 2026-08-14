@@ -16,6 +16,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import de.beyerl.babytracker.data.EventRepository
+import de.beyerl.babytracker.ui.analytics.AnalyticsScreen
 import de.beyerl.babytracker.ui.day.DayScreen
 import de.beyerl.babytracker.ui.month.MonthScreen
 import de.beyerl.babytracker.ui.theme.BabyTrackerTheme
@@ -54,6 +55,13 @@ fun AppRoot() {
                 onDayClick = { date ->
                     navController.navigate("day/${date.toEpochDay()}")
                 },
+                onAnalyticsClick = { navController.navigate("analytics") },
+            )
+        }
+        composable("analytics") {
+            AnalyticsScreen(
+                repository = repo,
+                onBack = { navController.popBackStack() },
             )
         }
         composable(
