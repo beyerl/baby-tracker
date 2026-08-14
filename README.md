@@ -18,7 +18,8 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
   Kategorie, Notiz).
 - **Auswertung**: Liniendiagramm der Einträge pro Tag für alle vier Kategorien
   (einzelne Linien, nicht gestapelt) mit klickbarer Legende zum Ein-/Ausblenden
-  einzelner Kategorien.
+  einzelner Kategorien. Zeitraum über Von/Bis-Datepicker einschränkbar
+  (Standard: aktueller Monat).
 - Vollständig **offline**, lokale Speicherung via Room.
 
 ## Tech-Stack

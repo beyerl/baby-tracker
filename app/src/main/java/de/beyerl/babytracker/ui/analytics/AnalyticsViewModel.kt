@@ -6,13 +6,18 @@ import androidx.lifecycle.viewModelScope
 import de.beyerl.babytracker.data.Event
 import de.beyerl.babytracker.data.EventRepository
 import de.beyerl.babytracker.data.EventType
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import java.time.Instant
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
+
+/** Inclusive [start]..[end] day range shown in the analytics view. */
+data class DateRange(val start: LocalDate, val end: LocalDate)
 
 /**
  * Daily event counts per category, aligned to a continuous day axis
@@ -34,10 +39,25 @@ class AnalyticsViewModel(repository: EventRepository) : ViewModel() {
 
     private val zone: ZoneId = ZoneId.systemDefault()
 
+    private val _range = MutableStateFlow(currentMonthRange())
+    val range: StateFlow<DateRange> = _range
+
     val data: StateFlow<AnalyticsData> =
-        repository.observeAll()
-            .map { it.toAnalyticsData(zone) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AnalyticsData.EMPTY)
+        combine(repository.observeAll(), _range) { events, range ->
+            events.toAnalyticsData(zone, range)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AnalyticsData.EMPTY)
+
+    /** Sets the range start; pushes the end out too if it would precede start. */
+    fun setStart(date: LocalDate) {
+        val cur = _range.value
+        _range.value = DateRange(date, if (date.isAfter(cur.end)) date else cur.end)
+    }
+
+    /** Sets the range end; pulls the start in too if it would follow end. */
+    fun setEnd(date: LocalDate) {
+        val cur = _range.value
+        _range.value = DateRange(if (date.isBefore(cur.start)) date else cur.start, date)
+    }
 
     class Factory(private val repository: EventRepository) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
@@ -46,18 +66,22 @@ class AnalyticsViewModel(repository: EventRepository) : ViewModel() {
     }
 }
 
-private fun List<Event>.toAnalyticsData(zone: ZoneId): AnalyticsData {
-    if (isEmpty()) return AnalyticsData.EMPTY
+private fun currentMonthRange(): DateRange {
+    val month = YearMonth.now()
+    return DateRange(month.atDay(1), month.atEndOfMonth())
+}
+
+private fun List<Event>.toAnalyticsData(zone: ZoneId, range: DateRange): AnalyticsData {
+    if (range.start.isAfter(range.end)) return AnalyticsData.EMPTY
     val counts = HashMap<LocalDate, IntArray>()
     for (e in this) {
         val date = Instant.ofEpochMilli(e.startTime).atZone(zone).toLocalDate()
+        if (date.isBefore(range.start) || date.isAfter(range.end)) continue
         val arr = counts.getOrPut(date) { IntArray(EventType.entries.size) }
         arr[e.type.ordinal]++
     }
-    val min = counts.keys.minOrNull()!!
-    val max = counts.keys.maxOrNull()!!
-    val dates = generateSequence(min) { it.plusDays(1) }
-        .takeWhile { !it.isAfter(max) }
+    val dates = generateSequence(range.start) { it.plusDays(1) }
+        .takeWhile { !it.isAfter(range.end) }
         .toList()
     val series = EventType.entries.associateWith { type ->
         dates.map { counts[it]?.get(type.ordinal) ?: 0 }

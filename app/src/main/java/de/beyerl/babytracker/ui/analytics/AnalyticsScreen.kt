@@ -18,13 +18,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -47,7 +53,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import de.beyerl.babytracker.data.EventRepository
 import de.beyerl.babytracker.data.EventType
 import de.beyerl.babytracker.ui.ui
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+
+private val dayFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,6 +68,7 @@ fun AnalyticsScreen(
 ) {
     val vm: AnalyticsViewModel = viewModel(factory = AnalyticsViewModel.Factory(repository))
     val data by vm.data.collectAsState()
+    val range by vm.range.collectAsState()
 
     // Categories currently hidden via the legend; empty = all lines shown.
     var hidden by remember { mutableStateOf(emptySet<EventType>()) }
@@ -79,12 +91,24 @@ fun AnalyticsScreen(
                 .padding(padding)
                 .padding(16.dp),
         ) {
-            if (data.isEmpty) {
+            Text("Einträge pro Tag", style = MaterialTheme.typography.titleMedium)
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                DateField("Von", range.start, Modifier.weight(1f)) { vm.setStart(it) }
+                DateField("Bis", range.end, Modifier.weight(1f)) { vm.setEnd(it) }
+            }
+
+            val hasData = data.series.values.any { list -> list.any { it > 0 } }
+            if (!hasData) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Noch keine Daten", color = MaterialTheme.colorScheme.outline)
+                    Text("Keine Einträge in diesem Zeitraum", color = MaterialTheme.colorScheme.outline)
                 }
             } else {
-                Text("Einträge pro Tag", style = MaterialTheme.typography.titleMedium)
                 LineChart(
                     data = data,
                     visible = EventType.entries.toSet() - hidden,
@@ -100,6 +124,41 @@ fun AnalyticsScreen(
                     },
                 )
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DateField(
+    label: String,
+    date: LocalDate,
+    modifier: Modifier = Modifier,
+    onDateChange: (LocalDate) -> Unit,
+) {
+    var showPicker by remember { mutableStateOf(false) }
+
+    OutlinedButton(onClick = { showPicker = true }, modifier = modifier) {
+        Icon(Icons.Filled.DateRange, contentDescription = null)
+        Spacer(Modifier.size(6.dp))
+        Text("$label: ${date.format(dayFmt)}")
+    }
+
+    if (showPicker) {
+        val state = rememberDatePickerState(initialSelectedDateMillis = date.toUtcMillis())
+        DatePickerDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.selectedDateMillis?.let { onDateChange(it.toLocalDateUtc()) }
+                    showPicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPicker = false }) { Text("Abbrechen") }
+            },
+        ) {
+            DatePicker(state = state)
         }
     }
 }
@@ -235,3 +294,9 @@ private fun Legend(
         }
     }
 }
+
+private fun LocalDate.toUtcMillis(): Long =
+    atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+
+private fun Long.toLocalDateUtc(): LocalDate =
+    Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
