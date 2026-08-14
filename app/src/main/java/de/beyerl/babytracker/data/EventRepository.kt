@@ -53,6 +53,15 @@ class EventRepository(private val dao: EventDao) {
     /** Reactive stream of all events, oldest first – for the analytics view. */
     fun observeAll(): Flow<List<Event>> = dao.observeAll()
 
+    /** Adds imported events on top of the existing data. */
+    suspend fun importAppend(events: List<Event>) = dao.insertAll(events)
+
+    /** Replaces all stored data with the imported events. */
+    suspend fun importReplace(events: List<Event>) {
+        dao.deleteAll()
+        dao.insertAll(events)
+    }
+
     suspend fun update(event: Event) = dao.update(event)
 
     suspend fun delete(event: Event) = dao.delete(event)

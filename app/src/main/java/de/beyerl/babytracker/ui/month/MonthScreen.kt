@@ -25,17 +25,23 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +54,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.beyerl.babytracker.data.EventRepository
 import de.beyerl.babytracker.ui.DaySummary
+import de.beyerl.babytracker.ui.ImportResult
 import de.beyerl.babytracker.ui.MonthViewModel
 import de.beyerl.babytracker.ui.theme.FeedColor
 import de.beyerl.babytracker.ui.theme.PeeColor
@@ -89,6 +96,57 @@ fun MonthScreen(
         }
     }
 
+    // Number of events parsed from a picked file, awaiting the add/replace choice.
+    var importCount by remember { mutableStateOf<Int?>(null) }
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            vm.prepareImport(context.contentResolver, uri) { result ->
+                when (result) {
+                    is ImportResult.Ready ->
+                        if (result.count > 0) {
+                            importCount = result.count
+                        } else {
+                            Toast.makeText(context, "Keine gültigen Einträge gefunden", Toast.LENGTH_SHORT).show()
+                        }
+                    ImportResult.Error ->
+                        Toast.makeText(context, "Datei konnte nicht gelesen werden", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    if (importCount != null) {
+        val count = importCount
+        AlertDialog(
+            onDismissRequest = {
+                importCount = null
+                vm.cancelImport()
+            },
+            title = { Text("Excel-Import") },
+            text = {
+                Text("$count Einträge gefunden. Zu den vorhandenen Daten hinzufügen oder alle vorhandenen Daten ersetzen?")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    importCount = null
+                    vm.confirmImport(replace = false) { n ->
+                        Toast.makeText(context, "$n Einträge hinzugefügt", Toast.LENGTH_SHORT).show()
+                    }
+                }) { Text("Hinzufügen") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    importCount = null
+                    vm.confirmImport(replace = true) { n ->
+                        Toast.makeText(context, "Daten ersetzt ($n Einträge)", Toast.LENGTH_SHORT).show()
+                    }
+                }) { Text("Ersetzen") }
+            },
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -99,6 +157,9 @@ fun MonthScreen(
                     }
                     IconButton(onClick = { exportLauncher.launch("baby-tracker-$today.xlsx") }) {
                         Icon(Icons.Filled.FileDownload, contentDescription = "Als Excel exportieren")
+                    }
+                    IconButton(onClick = { importLauncher.launch(arrayOf(XLSX_MIME_TYPE)) }) {
+                        Icon(Icons.Filled.FileUpload, contentDescription = "Aus Excel importieren")
                     }
                     IconButton(onClick = { vm.previousMonth() }) {
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Voriger Monat")

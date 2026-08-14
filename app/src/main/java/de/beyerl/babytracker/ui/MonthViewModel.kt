@@ -9,6 +9,7 @@ import de.beyerl.babytracker.data.Event
 import de.beyerl.babytracker.data.EventRepository
 import de.beyerl.babytracker.data.EventType
 import de.beyerl.babytracker.export.ExcelExporter
+import de.beyerl.babytracker.export.ExcelImporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +24,12 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
+
+/** Outcome of parsing an Excel file for import. */
+sealed interface ImportResult {
+    data class Ready(val count: Int) : ImportResult
+    data object Error : ImportResult
+}
 
 /** Per-day aggregate shown in the month grid. */
 data class DaySummary(
@@ -75,6 +82,48 @@ class MonthViewModel(private val repository: EventRepository) : ViewModel() {
             }
             onResult(success)
         }
+    }
+
+    // Parsed-but-not-yet-committed events, awaiting the user's add/replace choice.
+    private var pendingImport: List<Event>? = null
+
+    /** Reads and parses an Excel file, then reports how many events were found. */
+    fun prepareImport(resolver: ContentResolver, uri: Uri, onResult: (ImportResult) -> Unit) {
+        viewModelScope.launch {
+            val parsed = withContext(Dispatchers.IO) {
+                runCatching {
+                    resolver.openInputStream(uri)?.use { ExcelImporter.read(it) }
+                        ?: error("Could not open input stream")
+                }
+            }
+            parsed.fold(
+                onSuccess = { events ->
+                    pendingImport = events
+                    onResult(ImportResult.Ready(events.size))
+                },
+                onFailure = { onResult(ImportResult.Error) },
+            )
+        }
+    }
+
+    /** Commits the previously parsed import, either appending or replacing. */
+    fun confirmImport(replace: Boolean, onDone: (Int) -> Unit) {
+        val events = pendingImport
+        pendingImport = null
+        if (events == null) {
+            onDone(0)
+            return
+        }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                if (replace) repository.importReplace(events) else repository.importAppend(events)
+            }
+            onDone(events.size)
+        }
+    }
+
+    fun cancelImport() {
+        pendingImport = null
     }
 
     private fun List<Event>.groupByDay(): Map<LocalDate, DaySummary> {

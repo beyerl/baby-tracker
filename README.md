@@ -13,6 +13,9 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
 - Einträge bearbeiten und löschen.
 - **Excel-Export** (`.xlsx`) aller erfassten Daten über den Download-Button in der
   Monatsansicht – Speicherort per System-Dialog wählbar, ohne Zusatzberechtigungen.
+- **Excel-Import** (`.xlsx`) über den Upload-Button – Daten wahlweise **hinzufügen**
+  oder **ersetzen**. Liest das eigene Exportformat (Spalten Datum, Start, Ende,
+  Kategorie, Notiz).
 - **Auswertung**: Liniendiagramm der Einträge pro Tag für alle vier Kategorien
   (einzelne Linien, nicht gestapelt) mit klickbarer Legende zum Ein-/Ausblenden
   einzelner Kategorien.

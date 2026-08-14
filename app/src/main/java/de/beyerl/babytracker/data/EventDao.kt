@@ -14,6 +14,13 @@ interface EventDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(event: Event): Long
 
+    /** Bulk insert (id = 0 auto-generates) – used by the Excel import. */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(events: List<Event>)
+
+    @Query("DELETE FROM events")
+    suspend fun deleteAll()
+
     @Update
     suspend fun update(event: Event)
 
