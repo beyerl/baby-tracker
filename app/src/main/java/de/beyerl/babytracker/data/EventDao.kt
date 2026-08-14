@@ -26,4 +26,8 @@ interface EventDao {
 
     @Query("SELECT * FROM events WHERE id = :id")
     suspend fun getById(id: Long): Event?
+
+    /** All events, oldest first – used for the full data export. */
+    @Query("SELECT * FROM events ORDER BY startTime ASC")
+    suspend fun getAll(): List<Event>
 }

@@ -11,6 +11,8 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
 - Schnelles Erfassen per Kategorie-Button (Standardzeit = jetzt), Zeit anpassbar.
 - Schlaffenster mit Von/Bis-Zeit (auch über Mitternacht).
 - Einträge bearbeiten und löschen.
+- **Excel-Export** (`.xlsx`) aller erfassten Daten über den Download-Button in der
+  Monatsansicht – Speicherort per System-Dialog wählbar, ohne Zusatzberechtigungen.
 - Vollständig **offline**, lokale Speicherung via Room.
 
 ## Tech-Stack
@@ -30,8 +32,8 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
 ## CI / Deployment
 
 GitHub Actions (`.github/workflows/android.yml`) baut bei jedem Push auf `main` die
-Debug-APK, lädt sie als Artefakt hoch und veröffentlicht sie als rollierendes
-`latest`-Release. Für ein Git-Tag `v*` wird ein reguläres Release erstellt.
+Debug-APK und veröffentlicht sie als rollierendes `latest`-Release. Für ein Git-Tag
+`v*` wird ein reguläres Release erstellt.
 
 > Play-Store-Deployment ist nicht enthalten – dafür wären ein Upload-Keystore und
 > Play-Console-Credentials als Repository-Secrets nötig.

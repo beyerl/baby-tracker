@@ -1,11 +1,15 @@
 package de.beyerl.babytracker.ui
 
+import android.content.ContentResolver
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import de.beyerl.babytracker.data.Event
 import de.beyerl.babytracker.data.EventRepository
 import de.beyerl.babytracker.data.EventType
+import de.beyerl.babytracker.export.ExcelExporter
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -13,6 +17,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
@@ -51,6 +57,24 @@ class MonthViewModel(private val repository: EventRepository) : ViewModel() {
 
     fun previousMonth() {
         _month.value = _month.value.minusMonths(1)
+    }
+
+    /**
+     * Exports all stored events as an xlsx file to [uri] (a document created via
+     * the system "create document" picker). [onResult] is called on the main
+     * thread with whether the write succeeded.
+     */
+    fun exportToExcel(resolver: ContentResolver, uri: Uri, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val success = withContext(Dispatchers.IO) {
+                runCatching {
+                    val events = repository.getAll()
+                    resolver.openOutputStream(uri)?.use { ExcelExporter.write(events, it) }
+                        ?: error("Could not open output stream")
+                }.isSuccess
+            }
+            onResult(success)
+        }
     }
 
     private fun List<Event>.groupByDay(): Map<LocalDate, DaySummary> {

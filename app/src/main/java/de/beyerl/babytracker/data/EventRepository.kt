@@ -47,6 +47,9 @@ class EventRepository(private val dao: EventDao) {
         )
     }
 
+    /** Every stored event, oldest first – for the Excel export. */
+    suspend fun getAll(): List<Event> = dao.getAll()
+
     suspend fun update(event: Event) = dao.update(event)
 
     suspend fun delete(event: Event) = dao.delete(event)

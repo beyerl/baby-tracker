@@ -18,9 +18,13 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -51,6 +56,9 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+private const val XLSX_MIME_TYPE =
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MonthScreen(
@@ -64,11 +72,29 @@ fun MonthScreen(
     val title = month.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.GERMAN))
     val today = LocalDate.now()
 
+    val context = LocalContext.current
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(XLSX_MIME_TYPE),
+    ) { uri ->
+        if (uri != null) {
+            vm.exportToExcel(context.contentResolver, uri) { ok ->
+                Toast.makeText(
+                    context,
+                    if (ok) "Export gespeichert" else "Export fehlgeschlagen",
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(title) },
                 actions = {
+                    IconButton(onClick = { exportLauncher.launch("baby-tracker-$today.xlsx") }) {
+                        Icon(Icons.Filled.FileDownload, contentDescription = "Als Excel exportieren")
+                    }
                     IconButton(onClick = { vm.previousMonth() }) {
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Voriger Monat")
                     }
