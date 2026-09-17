@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import de.beyerl.babytracker.data.Event
 import de.beyerl.babytracker.data.EventRepository
 import de.beyerl.babytracker.data.EventType
+import de.beyerl.babytracker.stats.FeedingStats
 import de.beyerl.babytracker.stats.SleepStats
 import de.beyerl.babytracker.stats.WeekAverage
 import de.beyerl.babytracker.stats.weeklyAverages
@@ -36,6 +37,7 @@ data class AnalyticsData(
     val sleepTimes: SleepTimesData,
     val nightSleep: NightSleepData,
     val awake: AwakeData,
+    val feeding: FeedingData,
 ) {
     val isEmpty: Boolean get() = dates.isEmpty()
 
@@ -46,6 +48,7 @@ data class AnalyticsData(
             sleepTimes = SleepTimesData(emptyList(), emptyList()),
             nightSleep = NightSleepData(emptyList(), emptyList(), emptyList(), emptyList()),
             awake = AwakeData(emptyList(), emptyList()),
+            feeding = FeedingData(emptyList(), null, 0),
         )
     }
 }
@@ -66,6 +69,13 @@ data class NightSleepData(
 
 /** Awake time ("Wachzeit") per completed day in minutes and its Monday–Sunday averages. */
 data class AwakeData(val values: List<Long?>, val weeks: List<WeekAverage>)
+
+/** Average gap between feedings in minutes: per day, and over all [rangeGapCount] gaps in the range. */
+data class FeedingData(
+    val averageGap: List<Double?>,
+    val rangeAverageGap: Double?,
+    val rangeGapCount: Int,
+)
 
 class AnalyticsViewModel(repository: EventRepository) : ViewModel() {
 
@@ -129,6 +139,9 @@ private fun List<Event>.toAnalyticsData(zone: ZoneId, range: DateRange, today: L
     val nightsInRange = dates.mapNotNull { nights[it] }
     // Today isn't over yet; its awake time would be overstated.
     val awake = SleepStats.awakeMinutesPerDay(this, zone, dates.filter { it.isBefore(today) })
+    val feedingGaps = FeedingStats.gapsPerDay(this, zone)
+    val feedingGapsInRange = dates.mapNotNull { feedingGaps[it] }
+    val rangeGapCount = feedingGapsInRange.sumOf { it.count }
 
     return AnalyticsData(
         dates = dates,
@@ -146,6 +159,15 @@ private fun List<Event>.toAnalyticsData(zone: ZoneId, range: DateRange, today: L
         awake = AwakeData(
             values = dates.map { awake[it] },
             weeks = weeklyAverages(awake.mapValues { it.value.toDouble() }),
+        ),
+        feeding = FeedingData(
+            averageGap = dates.map { feedingGaps[it]?.averageMinutes },
+            rangeAverageGap = if (rangeGapCount > 0) {
+                feedingGapsInRange.sumOf { it.totalMinutes }.toDouble() / rangeGapCount
+            } else {
+                null
+            },
+            rangeGapCount = rangeGapCount,
         ),
     )
 }

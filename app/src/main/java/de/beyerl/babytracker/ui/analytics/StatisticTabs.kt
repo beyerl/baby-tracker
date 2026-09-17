@@ -1,6 +1,7 @@
 package de.beyerl.babytracker.ui.analytics
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -19,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import de.beyerl.babytracker.stats.WeekAverage
+import de.beyerl.babytracker.ui.theme.FeedColor
 import de.beyerl.babytracker.ui.theme.SleepColor
 import de.beyerl.babytracker.ui.theme.WakeColor
 import java.time.LocalDate
@@ -104,6 +106,39 @@ internal fun AwakeTab(data: AnalyticsData) {
         columns = listOf(WeeklyColumn("Wachzeit", data.awake.weeks)),
         countText = { if (it == 1) "1 Tag" else "$it Tage" },
     )
+}
+
+/** Tab "Fütterungen": average gap between two feedings per day, and over the whole range. */
+@Composable
+internal fun FeedingTab(data: AnalyticsData) {
+    HourChart(
+        title = "Ø Abstand zwischen Fütterungen",
+        caption = "Pro Tag, gezählt am Tag der späteren Fütterung; Abstände über 16 h gelten als Erfassungslücke",
+        dates = data.dates,
+        minutes = data.feeding.averageGap,
+        color = FeedColor,
+        yLabel = ::formatHours,
+        emptyText = "Keine zwei aufeinanderfolgenden Fütterungen im Zeitraum",
+    )
+    val average = data.feeding.rangeAverageGap ?: return
+    val count = data.feeding.rangeGapCount
+    HorizontalDivider()
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text("Ø Abstand im Zeitraum", style = MaterialTheme.typography.titleSmall)
+            Text(
+                if (count == 1) "aus 1 Abstand" else "aus $count Abständen",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline,
+            )
+        }
+        Text(formatDuration(average), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+    }
 }
 
 /** One metric in a [WeeklyAverageTable]. */

@@ -63,6 +63,7 @@ private enum class AnalyticsTab(val title: String) {
     SLEEP_TIMES("Schlafenszeiten"),
     NIGHT_SLEEP("Gesamtschlaf"),
     AWAKE("Wachzeit"),
+    FEEDING("Fütterungen"),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -127,6 +128,7 @@ fun AnalyticsScreen(
                     AnalyticsTab.SLEEP_TIMES -> SleepTimesTab(data)
                     AnalyticsTab.NIGHT_SLEEP -> NightSleepTab(data)
                     AnalyticsTab.AWAKE -> AwakeTab(data)
+                    AnalyticsTab.FEEDING -> FeedingTab(data)
                 }
             }
         }

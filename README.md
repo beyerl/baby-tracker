@@ -34,6 +34,9 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
   - **Wachzeit**: 24 h minus alle Schlafzeiten eines Kalendertags (Schlaf über
     Mitternacht wird aufgeteilt, nur abgeschlossene Tage), mit
     Wochendurchschnitt (Mo–So) darunter.
+  - **Fütterungen**: durchschnittlicher Abstand zwischen zwei Fütterungen pro Tag
+    (gezählt am Tag der späteren Fütterung; Abstände über 16 h gelten als
+    Erfassungslücke) und Durchschnitt über den gesamten Zeitraum.
 - Vollständig **offline**, lokale Speicherung via Room.
 
 ## Tech-Stack
