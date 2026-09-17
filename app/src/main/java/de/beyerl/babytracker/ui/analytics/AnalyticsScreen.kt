@@ -61,6 +61,7 @@ private val dayFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy"
 private enum class AnalyticsTab(val title: String) {
     ENTRIES("Einträge"),
     SLEEP_TIMES("Schlafenszeiten"),
+    NIGHT_SLEEP("Gesamtschlaf"),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -123,6 +124,7 @@ fun AnalyticsScreen(
                         onToggle = { type -> hidden = if (type in hidden) hidden - type else hidden + type },
                     )
                     AnalyticsTab.SLEEP_TIMES -> SleepTimesTab(data)
+                    AnalyticsTab.NIGHT_SLEEP -> NightSleepTab(data)
                 }
             }
         }

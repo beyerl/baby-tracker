@@ -7,6 +7,8 @@ import de.beyerl.babytracker.data.Event
 import de.beyerl.babytracker.data.EventRepository
 import de.beyerl.babytracker.data.EventType
 import de.beyerl.babytracker.stats.SleepStats
+import de.beyerl.babytracker.stats.WeekAverage
+import de.beyerl.babytracker.stats.weeklyAverages
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -32,16 +34,25 @@ data class AnalyticsData(
     val dates: List<LocalDate>,
     val series: Map<EventType, List<Int>>,
     val sleepTimes: SleepTimesData,
+    val nightSleep: NightSleepData,
 ) {
     val isEmpty: Boolean get() = dates.isEmpty()
 
     companion object {
-        val EMPTY = AnalyticsData(emptyList(), emptyMap(), SleepTimesData(emptyList(), emptyList()))
+        val EMPTY = AnalyticsData(
+            dates = emptyList(),
+            series = emptyMap(),
+            sleepTimes = SleepTimesData(emptyList(), emptyList()),
+            nightSleep = NightSleepData(emptyList(), emptyList()),
+        )
     }
 }
 
 /** Wall-clock minutes of the morning wake-up and the evening bedtime (> 24 h after midnight) per day. */
 data class SleepTimesData(val wakeUp: List<Int?>, val bedtime: List<Int?>)
+
+/** Tracked sleep per night in minutes (at the evening's date) and its Monday–Sunday averages. */
+data class NightSleepData(val sleep: List<Long?>, val weeks: List<WeekAverage>)
 
 class AnalyticsViewModel(repository: EventRepository) : ViewModel() {
 
@@ -101,6 +112,8 @@ private fun List<Event>.toAnalyticsData(zone: ZoneId, range: DateRange): Analyti
     // values assigned across the range boundary (e.g. a bedtime after midnight) stay intact.
     val wakeUps = SleepStats.wakeUps(this, zone)
     val bedtimes = SleepStats.bedtimes(this, zone)
+    val nights = SleepStats.nights(this, zone)
+    val nightsInRange = dates.mapNotNull { nights[it] }
 
     return AnalyticsData(
         dates = dates,
@@ -108,6 +121,10 @@ private fun List<Event>.toAnalyticsData(zone: ZoneId, range: DateRange): Analyti
         sleepTimes = SleepTimesData(
             wakeUp = dates.map { wakeUps[it]?.clockMinutes },
             bedtime = dates.map { bedtimes[it]?.clockMinutes },
+        ),
+        nightSleep = NightSleepData(
+            sleep = dates.map { nights[it]?.sleepMinutes },
+            weeks = weeklyAverages(nightsInRange.associate { it.date to it.sleepMinutes.toDouble() }),
         ),
     )
 }

@@ -76,6 +76,62 @@ class SleepStatsTest {
     }
 
     @Test
+    fun night_sumsSleepBetweenBedtimeAndNextMorningsWakeUp() {
+        val nights = SleepStats.nights(night, zone)
+
+        val n = nights.getValue(day("2026-09-14"))
+        assertEquals(setOf(day("2026-09-14")), nights.keys)
+        assertEquals(11 * 60 + 5L, n.inBedMinutes) // 19:45 -> 06:50
+        assertEquals(3 * 60 + 45 + 6 * 60 + 40L, n.sleepMinutes) // 19:45-23:30 + 00:10-06:50, nap excluded
+    }
+
+    @Test
+    fun night_sleptThroughInOneEntry() {
+        val nights = SleepStats.nights(listOf(sleep("2026-09-14T20:00", "2026-09-15T07:00", SleepMarker.BOTH)), zone)
+
+        val n = nights.getValue(day("2026-09-14"))
+        assertEquals(11 * 60L, n.sleepMinutes)
+        assertEquals(11 * 60L, n.inBedMinutes)
+    }
+
+    @Test
+    fun nightSleep_isClippedToTheNightAndCountsOverlapsOnce() {
+        val events = listOf(
+            sleep("2026-09-14T17:00", "2026-09-14T18:00"), // nap before bedtime
+            sleep("2026-09-14T20:00", "2026-09-14T23:00", SleepMarker.BEDTIME),
+            sleep("2026-09-14T22:00", "2026-09-14T23:30"), // overlaps the entry above
+            sleep("2026-09-15T01:00", "2026-09-15T06:00", SleepMarker.WAKE_UP),
+            sleep("2026-09-15T05:30", "2026-09-15T06:30"), // runs past the wake-up
+            sleep("2026-09-15T09:00", "2026-09-15T10:00"), // morning nap
+        )
+
+        val n = SleepStats.nights(events, zone).getValue(day("2026-09-14"))
+
+        assertEquals(10 * 60L, n.inBedMinutes)
+        assertEquals(3 * 60 + 30 + 5 * 60L, n.sleepMinutes) // 20:00-23:30 + 01:00-06:00
+    }
+
+    @Test
+    fun night_withoutWakeUpOnTheNextDay_isSkipped() {
+        val events = listOf(
+            sleep("2026-09-14T20:00", "2026-09-14T23:00", SleepMarker.BEDTIME),
+            sleep("2026-09-16T01:00", "2026-09-16T06:00", SleepMarker.WAKE_UP),
+        )
+
+        assertTrue(SleepStats.nights(events, zone).isEmpty())
+    }
+
+    @Test
+    fun night_longerThan20Hours_isSkipped() {
+        val events = listOf(
+            sleep("2026-09-14T12:30", "2026-09-14T14:00", SleepMarker.BEDTIME),
+            sleep("2026-09-15T08:00", "2026-09-15T09:00", SleepMarker.WAKE_UP),
+        )
+
+        assertTrue(SleepStats.nights(events, zone).isEmpty())
+    }
+
+    @Test
     fun unmarkedSleepAndOtherCategories_areIgnored() {
         val events = listOf(
             sleep("2026-09-14T20:00", "2026-09-15T07:00"),

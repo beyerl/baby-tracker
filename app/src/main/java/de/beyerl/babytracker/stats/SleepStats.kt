@@ -13,6 +13,18 @@ data class SleepMoment(
     val clockMinutes: Int,
 )
 
+/** The night from the bedtime on the evening of [date] to the wake-up on the following morning. */
+data class Night(
+    val date: LocalDate,
+    val bedtime: Long,
+    val wakeUp: Long,
+    /** Tracked sleep between bedtime and wake-up, in minutes ("Gesamtschlaf"). */
+    val sleepMinutes: Long,
+) {
+    /** Time from bedtime to wake-up, in minutes. */
+    val inBedMinutes: Long get() = (wakeUp - bedtime) / 60_000
+}
+
 /**
  * Sleep statistics derived from SLEEP events and their sleep markers. Pure
  * java.time code (no Android APIs), so it is covered by plain JVM unit tests.
@@ -21,6 +33,30 @@ object SleepStats {
 
     /** Bedtimes starting before this hour belong to the previous evening. */
     const val EVENING_CUTOFF_HOUR = 12
+
+    /** Longest plausible night; longer bedtime/wake-up pairs count as mis-marked. */
+    const val MAX_NIGHT_HOURS = 20L
+
+    /**
+     * Nights from each evening's [bedtimes] entry to the [wakeUps] entry of the
+     * following day, keyed by the evening. Pairs out of order or longer than
+     * [MAX_NIGHT_HOURS] are skipped. A night's sleep is the time covered by SLEEP
+     * events within bedtime..wake-up; overlapping events count once.
+     */
+    fun nights(events: List<Event>, zone: ZoneId): Map<LocalDate, Night> {
+        val bedtimes = bedtimes(events, zone)
+        val wakeUps = wakeUps(events, zone)
+        val sleeps = events.sleepIntervals()
+        val result = HashMap<LocalDate, Night>()
+        for ((evening, bedtime) in bedtimes) {
+            val wakeUp = wakeUps[evening.plusDays(1)] ?: continue
+            val length = wakeUp.epochMillis - bedtime.epochMillis
+            if (length <= 0 || length > MAX_NIGHT_HOURS * 3_600_000) continue
+            val sleep = coveredMillis(sleeps, bedtime.epochMillis, wakeUp.epochMillis)
+            result[evening] = Night(evening, bedtime.epochMillis, wakeUp.epochMillis, sleep / 60_000)
+        }
+        return result
+    }
 
     /**
      * Evening bedtime per day: the start of a bedtime-marked sleep. A start after

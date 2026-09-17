@@ -27,6 +27,9 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
     einzelner Kategorien.
   - **Schlafenszeiten**: Uhrzeit des Aufwachens und des Einschlafens pro Tag aus
     den Schlaf-Markierungen (Einschlafen nach Mitternacht zählt zum Vorabend).
+  - **Gesamtschlaf**: geschlafene Zeit pro Nacht – Summe aller Schlaf-Einträge
+    von der Schlafenszeit bis zur Aufwachzeit am Folgetag – mit
+    Wochendurchschnitt (Mo–So) darunter.
 - Vollständig **offline**, lokale Speicherung via Room.
 
 ## Tech-Stack
