@@ -88,6 +88,24 @@ internal fun NightSleepTab(data: AnalyticsData) {
     )
 }
 
+/** Tab "Wachzeit": 24 h minus all sleep per completed day, with Monday–Sunday averages below. */
+@Composable
+internal fun AwakeTab(data: AnalyticsData) {
+    HourChart(
+        title = "Wachzeit",
+        caption = "24 h minus alle Schlafzeiten des Tages; nur abgeschlossene Tage",
+        dates = data.dates,
+        minutes = data.awake.values,
+        color = WakeColor,
+        yLabel = ::formatHours,
+        emptyText = "Keine Schlaf-Einträge an abgeschlossenen Tagen im Zeitraum",
+    )
+    WeeklyAverageTable(
+        columns = listOf(WeeklyColumn("Wachzeit", data.awake.weeks)),
+        countText = { if (it == 1) "1 Tag" else "$it Tage" },
+    )
+}
+
 /** One metric in a [WeeklyAverageTable]. */
 internal class WeeklyColumn(val title: String, val weeks: List<WeekAverage>)
 

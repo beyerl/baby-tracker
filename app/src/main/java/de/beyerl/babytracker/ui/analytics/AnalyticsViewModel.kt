@@ -35,6 +35,7 @@ data class AnalyticsData(
     val series: Map<EventType, List<Int>>,
     val sleepTimes: SleepTimesData,
     val nightSleep: NightSleepData,
+    val awake: AwakeData,
 ) {
     val isEmpty: Boolean get() = dates.isEmpty()
 
@@ -44,6 +45,7 @@ data class AnalyticsData(
             series = emptyMap(),
             sleepTimes = SleepTimesData(emptyList(), emptyList()),
             nightSleep = NightSleepData(emptyList(), emptyList(), emptyList(), emptyList()),
+            awake = AwakeData(emptyList(), emptyList()),
         )
     }
 }
@@ -62,6 +64,9 @@ data class NightSleepData(
     val awakeWeeks: List<WeekAverage>,
 )
 
+/** Awake time ("Wachzeit") per completed day in minutes and its Monday–Sunday averages. */
+data class AwakeData(val values: List<Long?>, val weeks: List<WeekAverage>)
+
 class AnalyticsViewModel(repository: EventRepository) : ViewModel() {
 
     private val zone: ZoneId = ZoneId.systemDefault()
@@ -71,7 +76,7 @@ class AnalyticsViewModel(repository: EventRepository) : ViewModel() {
 
     val data: StateFlow<AnalyticsData> =
         combine(repository.observeAll(), _range) { events, range ->
-            events.toAnalyticsData(zone, range)
+            events.toAnalyticsData(zone, range, today = LocalDate.now(zone))
         }
             .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AnalyticsData.EMPTY)
@@ -100,7 +105,7 @@ private fun currentMonthRange(): DateRange {
     return DateRange(month.atDay(1), month.atEndOfMonth())
 }
 
-private fun List<Event>.toAnalyticsData(zone: ZoneId, range: DateRange): AnalyticsData {
+private fun List<Event>.toAnalyticsData(zone: ZoneId, range: DateRange, today: LocalDate): AnalyticsData {
     if (range.start.isAfter(range.end)) return AnalyticsData.EMPTY
     val counts = HashMap<LocalDate, IntArray>()
     for (e in this) {
@@ -122,6 +127,8 @@ private fun List<Event>.toAnalyticsData(zone: ZoneId, range: DateRange): Analyti
     val bedtimes = SleepStats.bedtimes(this, zone)
     val nights = SleepStats.nights(this, zone)
     val nightsInRange = dates.mapNotNull { nights[it] }
+    // Today isn't over yet; its awake time would be overstated.
+    val awake = SleepStats.awakeMinutesPerDay(this, zone, dates.filter { it.isBefore(today) })
 
     return AnalyticsData(
         dates = dates,
@@ -135,6 +142,10 @@ private fun List<Event>.toAnalyticsData(zone: ZoneId, range: DateRange): Analyti
             awake = dates.map { nights[it]?.awakeMinutes },
             sleepWeeks = weeklyAverages(nightsInRange.associate { it.date to it.sleepMinutes.toDouble() }),
             awakeWeeks = weeklyAverages(nightsInRange.associate { it.date to it.awakeMinutes.toDouble() }),
+        ),
+        awake = AwakeData(
+            values = dates.map { awake[it] },
+            weeks = weeklyAverages(awake.mapValues { it.value.toDouble() }),
         ),
     )
 }

@@ -135,6 +135,40 @@ class SleepStatsTest {
     }
 
     @Test
+    fun awakeTime_splitsSleepAcrossMidnight() {
+        val events = listOf(
+            sleep("2026-09-14T20:00", "2026-09-15T07:00", SleepMarker.BOTH),
+            sleep("2026-09-15T13:00", "2026-09-15T14:30"),
+            Event(type = EventType.FEED, startTime = at("2026-09-15T08:00")),
+        )
+
+        val awake = SleepStats.awakeMinutesPerDay(events, zone, listOf(day("2026-09-14"), day("2026-09-15")))
+
+        assertEquals(20 * 60L, awake.getValue(day("2026-09-14"))) // 24 h - 20:00-24:00
+        assertEquals(15 * 60 + 30L, awake.getValue(day("2026-09-15"))) // 24 h - 00:00-07:00 - 13:00-14:30
+    }
+
+    @Test
+    fun awakeTime_leavesOutDaysWithoutSleepAndDaysNotAsked() {
+        val events = listOf(sleep("2026-09-15T13:00", "2026-09-15T14:00"))
+
+        val awake = SleepStats.awakeMinutesPerDay(events, zone, listOf(day("2026-09-14"), day("2026-09-15")))
+
+        assertEquals(setOf(day("2026-09-15")), awake.keys)
+        assertTrue(SleepStats.awakeMinutesPerDay(events, zone, emptyList()).isEmpty())
+    }
+
+    @Test
+    fun awakeTime_usesRealDayLengthWhenClocksChange() {
+        // 2026-10-25: clocks go back at 03:00, so the day has 25 hours.
+        val events = listOf(sleep("2026-10-24T20:00", "2026-10-25T07:00"))
+
+        val awake = SleepStats.awakeMinutesPerDay(events, zone, listOf(day("2026-10-25")))
+
+        assertEquals(17 * 60L, awake.getValue(day("2026-10-25"))) // 25 h - 8 h real sleep after midnight
+    }
+
+    @Test
     fun unmarkedSleepAndOtherCategories_areIgnored() {
         val events = listOf(
             sleep("2026-09-14T20:00", "2026-09-15T07:00"),

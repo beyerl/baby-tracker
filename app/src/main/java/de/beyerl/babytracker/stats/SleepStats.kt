@@ -62,6 +62,24 @@ object SleepStats {
     }
 
     /**
+     * Awake time ("Wachzeit") per calendar day in minutes: the day's length (23 or
+     * 25 h when the clocks change) minus the time covered by SLEEP events that
+     * day. Sleep across midnight is split between both days; days without any
+     * sleep are left out. Callers pass completed days only.
+     */
+    fun awakeMinutesPerDay(events: List<Event>, zone: ZoneId, days: List<LocalDate>): Map<LocalDate, Long> {
+        val sleeps = events.sleepIntervals()
+        val result = HashMap<LocalDate, Long>()
+        for (day in days) {
+            val from = day.atStartOfDay(zone).toInstant().toEpochMilli()
+            val to = day.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+            val slept = coveredMillis(sleeps, from, to)
+            if (slept > 0) result[day] = (to - from - slept) / 60_000
+        }
+        return result
+    }
+
+    /**
      * Evening bedtime per day: the start of a bedtime-marked sleep. A start after
      * midnight (before [EVENING_CUTOFF_HOUR]) counts for the previous evening and
      * plots past 24:00. With several marks per evening the earliest wins.

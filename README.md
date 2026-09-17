@@ -31,6 +31,9 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
     von der Schlafenszeit bis zur Aufwachzeit am Folgetag – und **Wachphasen
     nachts** (Zeit von Schlafens- bis Aufwachzeit minus geschlafene Zeit), mit
     Wochendurchschnitten (Mo–So) darunter.
+  - **Wachzeit**: 24 h minus alle Schlafzeiten eines Kalendertags (Schlaf über
+    Mitternacht wird aufgeteilt, nur abgeschlossene Tage), mit
+    Wochendurchschnitt (Mo–So) darunter.
 - Vollständig **offline**, lokale Speicherung via Room.
 
 ## Tech-Stack
