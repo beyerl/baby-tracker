@@ -43,7 +43,7 @@ data class AnalyticsData(
             dates = emptyList(),
             series = emptyMap(),
             sleepTimes = SleepTimesData(emptyList(), emptyList()),
-            nightSleep = NightSleepData(emptyList(), emptyList()),
+            nightSleep = NightSleepData(emptyList(), emptyList(), emptyList(), emptyList()),
         )
     }
 }
@@ -51,8 +51,16 @@ data class AnalyticsData(
 /** Wall-clock minutes of the morning wake-up and the evening bedtime (> 24 h after midnight) per day. */
 data class SleepTimesData(val wakeUp: List<Int?>, val bedtime: List<Int?>)
 
-/** Tracked sleep per night in minutes (at the evening's date) and its Monday–Sunday averages. */
-data class NightSleepData(val sleep: List<Long?>, val weeks: List<WeekAverage>)
+/**
+ * Per night (at the evening's date), in minutes: tracked sleep ("Gesamtschlaf")
+ * and the time awake in between ("Wachphasen nachts"), each with Monday–Sunday averages.
+ */
+data class NightSleepData(
+    val sleep: List<Long?>,
+    val awake: List<Long?>,
+    val sleepWeeks: List<WeekAverage>,
+    val awakeWeeks: List<WeekAverage>,
+)
 
 class AnalyticsViewModel(repository: EventRepository) : ViewModel() {
 
@@ -124,7 +132,9 @@ private fun List<Event>.toAnalyticsData(zone: ZoneId, range: DateRange): Analyti
         ),
         nightSleep = NightSleepData(
             sleep = dates.map { nights[it]?.sleepMinutes },
-            weeks = weeklyAverages(nightsInRange.associate { it.date to it.sleepMinutes.toDouble() }),
+            awake = dates.map { nights[it]?.awakeMinutes },
+            sleepWeeks = weeklyAverages(nightsInRange.associate { it.date to it.sleepMinutes.toDouble() }),
+            awakeWeeks = weeklyAverages(nightsInRange.associate { it.date to it.awakeMinutes.toDouble() }),
         ),
     )
 }

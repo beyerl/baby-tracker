@@ -23,6 +23,9 @@ data class Night(
 ) {
     /** Time from bedtime to wake-up, in minutes. */
     val inBedMinutes: Long get() = (wakeUp - bedtime) / 60_000
+
+    /** "Wachphasen nachts": time from bedtime to wake-up without tracked sleep, in minutes. */
+    val awakeMinutes: Long get() = (inBedMinutes - sleepMinutes).coerceAtLeast(0)
 }
 
 /**

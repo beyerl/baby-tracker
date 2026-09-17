@@ -83,6 +83,7 @@ class SleepStatsTest {
         assertEquals(setOf(day("2026-09-14")), nights.keys)
         assertEquals(11 * 60 + 5L, n.inBedMinutes) // 19:45 -> 06:50
         assertEquals(3 * 60 + 45 + 6 * 60 + 40L, n.sleepMinutes) // 19:45-23:30 + 00:10-06:50, nap excluded
+        assertEquals(40L, n.awakeMinutes) // 23:30-00:10
     }
 
     @Test
@@ -92,6 +93,7 @@ class SleepStatsTest {
         val n = nights.getValue(day("2026-09-14"))
         assertEquals(11 * 60L, n.sleepMinutes)
         assertEquals(11 * 60L, n.inBedMinutes)
+        assertEquals(0L, n.awakeMinutes)
     }
 
     @Test
@@ -109,6 +111,7 @@ class SleepStatsTest {
 
         assertEquals(10 * 60L, n.inBedMinutes)
         assertEquals(3 * 60 + 30 + 5 * 60L, n.sleepMinutes) // 20:00-23:30 + 01:00-06:00
+        assertEquals(90L, n.awakeMinutes) // 23:30-01:00, not double-reduced by the overlap
     }
 
     @Test
