@@ -36,13 +36,19 @@ class EventRepository(private val dao: EventDao) {
         )
     }
 
-    suspend fun addSleep(start: LocalDateTime, end: LocalDateTime, note: String? = null) {
+    suspend fun addSleep(
+        start: LocalDateTime,
+        end: LocalDateTime,
+        marker: SleepMarker,
+        note: String? = null,
+    ) {
         dao.insert(
             Event(
                 type = EventType.SLEEP,
                 startTime = start.atZone(zone).toInstant().toEpochMilli(),
                 endTime = end.atZone(zone).toInstant().toEpochMilli(),
                 note = note?.ifBlank { null },
+                sleepMarker = marker,
             )
         )
     }

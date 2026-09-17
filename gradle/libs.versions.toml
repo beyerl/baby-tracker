@@ -8,6 +8,8 @@ activityCompose = "1.9.2"
 composeBom = "2024.09.02"
 navigationCompose = "2.8.1"
 room = "2.6.1"
+junit = "4.13.2"
+robolectric = "4.13"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -25,6 +27,8 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

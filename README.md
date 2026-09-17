@@ -10,12 +10,16 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
   inkl. Anzahl Schlaffenster.
 - Schnelles Erfassen per Kategorie-Button (Standardzeit = jetzt), Zeit anpassbar.
 - Schlaffenster mit Von/Bis-Zeit (auch über Mitternacht).
+- **Schlaf-Markierung** per Radiobutton: *Aufwachzeit*, *Schlafenszeit*,
+  *Schlafens- und Aufwachzeit* (durchgeschlafene Nacht in einem Eintrag) oder
+  *weder noch* (Standard) – Grundlage der Schlaf-Statistiken. Sichtbar in der
+  Tagesansicht.
 - Einträge bearbeiten und löschen.
 - **Excel-Export** (`.xlsx`) aller erfassten Daten über den Download-Button in der
   Monatsansicht – Speicherort per System-Dialog wählbar, ohne Zusatzberechtigungen.
 - **Excel-Import** (`.xlsx`) über den Upload-Button – Daten wahlweise **hinzufügen**
   oder **ersetzen**. Liest das eigene Exportformat (Spalten Datum, Start, Ende,
-  Kategorie, Notiz).
+  Kategorie, Notiz, Markierung); Dateien ohne Markierungs-Spalte bleiben lesbar.
 - **Auswertung**: Liniendiagramm der Einträge pro Tag für alle vier Kategorien
   (einzelne Linien, nicht gestapelt) mit klickbarer Legende zum Ein-/Ausblenden
   einzelner Kategorien. Zeitraum über Von/Bis-Datepicker einschränkbar
@@ -28,12 +32,15 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
 - MVVM (ViewModel + StateFlow), Navigation Compose
 - Room (SQLite), KSP
 - min SDK 26, target/compile SDK 34, Java 17
+- Tests: JUnit 4, Robolectric (Room-Migration, Excel-Roundtrip)
 
 ## Bauen
 
 ```bash
 ./gradlew assembleDebug
 # APK: app/build/outputs/apk/debug/app-debug.apk
+
+./gradlew testDebugUnitTest   # Unit-Tests
 ```
 
 ## CI / Deployment

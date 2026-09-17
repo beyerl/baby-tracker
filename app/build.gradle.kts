@@ -13,8 +13,8 @@ android {
         applicationId = "de.beyerl.babytracker"
         minSdk = 26
         targetSdk = 34
-        versionCode = 5
-        versionName = "0.5.0"
+        versionCode = 6
+        versionName = "0.6.0"
         vectorDrawables { useSupportLibrary = true }
     }
 
@@ -42,6 +42,12 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    testOptions {
+        unitTests {
+            // Robolectric tests (Room migration, Excel round trip) need the merged manifest.
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -63,4 +69,7 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     debugImplementation(libs.androidx.ui.tooling)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
 }

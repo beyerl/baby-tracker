@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import de.beyerl.babytracker.data.Event
 import de.beyerl.babytracker.data.EventRepository
 import de.beyerl.babytracker.data.EventType
+import de.beyerl.babytracker.data.SleepMarker
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -26,8 +27,8 @@ class DayViewModel(
         viewModelScope.launch { repository.addPoint(type, dateTime, note) }
     }
 
-    fun addSleep(start: LocalDateTime, end: LocalDateTime, note: String?) {
-        viewModelScope.launch { repository.addSleep(start, end, note) }
+    fun addSleep(start: LocalDateTime, end: LocalDateTime, marker: SleepMarker, note: String?) {
+        viewModelScope.launch { repository.addSleep(start, end, marker, note) }
     }
 
     fun update(event: Event) {

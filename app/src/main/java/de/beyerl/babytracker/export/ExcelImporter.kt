@@ -3,6 +3,7 @@ package de.beyerl.babytracker.export
 import android.util.Xml
 import de.beyerl.babytracker.data.Event
 import de.beyerl.babytracker.data.EventType
+import de.beyerl.babytracker.data.SleepMarker
 import org.xmlpull.v1.XmlPullParser
 import java.io.ByteArrayInputStream
 import java.io.InputStream
@@ -17,8 +18,10 @@ import java.util.zip.ZipInputStream
  * edited variants). Parses the OOXML zip with the platform pull parser, so it
  * stays dependency-free like the exporter.
  *
- * Expected columns: Datum | Start | Ende | Kategorie | Dauer (Min.) | Notiz.
- * Rows whose date/time/category can't be parsed (header, blanks) are skipped.
+ * Expected columns: Datum | Start | Ende | Kategorie | Dauer (Min.) | Notiz |
+ * Markierung. Markierung (added in 0.6.0) is optional, so older exports still
+ * import. Rows whose date/time/category can't be parsed (header, blanks) are
+ * skipped.
  * Note: if the file was re-saved by Excel it may store dates as numeric serials
  * with a style rather than "yyyy-MM-dd" text; those rows are then skipped.
  */
@@ -163,10 +166,18 @@ object ExcelImporter {
                     startTime = startMillis,
                     endTime = endMillis,
                     note = row[5]?.trim()?.ifBlank { null },
+                    sleepMarker = if (type == EventType.SLEEP) markerOf(row[6]?.trim().orEmpty()) else SleepMarker.NONE,
                 ),
             )
         }
         return events
+    }
+
+    private fun markerOf(label: String): SleepMarker = when (label.lowercase()) {
+        "schlafenszeit", "bedtime" -> SleepMarker.BEDTIME
+        "aufwachzeit", "wake_up" -> SleepMarker.WAKE_UP
+        "schlafens- und aufwachzeit", "both" -> SleepMarker.BOTH
+        else -> SleepMarker.NONE
     }
 
     private fun categoryOf(label: String): EventType? = when (label.lowercase()) {

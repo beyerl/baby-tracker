@@ -7,7 +7,8 @@ import androidx.room.PrimaryKey
  * A single logged event.
  *
  * Times are stored as epoch milliseconds (UTC). For point-in-time events
- * [endTime] is null; for SLEEP it holds the wake-up time.
+ * [endTime] is null; for SLEEP it holds the wake-up time. [sleepMarker] only
+ * applies to SLEEP and stays [SleepMarker.NONE] for all other types.
  */
 @Entity(tableName = "events")
 data class Event(
@@ -17,4 +18,5 @@ data class Event(
     val endTime: Long? = null,
     val note: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
+    val sleepMarker: SleepMarker = SleepMarker.NONE,
 )

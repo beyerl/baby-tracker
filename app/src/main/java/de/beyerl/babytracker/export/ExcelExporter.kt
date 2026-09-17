@@ -2,6 +2,7 @@ package de.beyerl.babytracker.export
 
 import de.beyerl.babytracker.data.Event
 import de.beyerl.babytracker.data.EventType
+import de.beyerl.babytracker.data.SleepMarker
 import java.io.OutputStream
 import java.time.Instant
 import java.time.ZoneId
@@ -22,7 +23,7 @@ object ExcelExporter {
     private val dateFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     private val timeFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-    private val headers = listOf("Datum", "Start", "Ende", "Kategorie", "Dauer (Min.)", "Notiz")
+    private val headers = listOf("Datum", "Start", "Ende", "Kategorie", "Dauer (Min.)", "Notiz", "Markierung")
 
     /** Serializes [events] (sorted by start time) as an xlsx stream into [out]. */
     fun write(events: List<Event>, out: OutputStream) {
@@ -54,6 +55,7 @@ object ExcelExporter {
                         CellValue.Text(label(e.type)),
                         durationMin?.let { CellValue.Number(it) } ?: CellValue.Text(""),
                         CellValue.Text(e.note ?: ""),
+                        CellValue.Text(markerLabel(e)),
                     ),
                 ),
             )
@@ -67,6 +69,15 @@ object ExcelExporter {
         EventType.FEED -> "Füttern"
         EventType.SLEEP -> "Schlaf"
     }
+
+    /** Empty unless the event is a marked sleep. */
+    private fun markerLabel(e: Event): String =
+        if (e.type != EventType.SLEEP) "" else when (e.sleepMarker) {
+            SleepMarker.NONE -> ""
+            SleepMarker.BEDTIME -> "Schlafenszeit"
+            SleepMarker.WAKE_UP -> "Aufwachzeit"
+            SleepMarker.BOTH -> "Schlafens- und Aufwachzeit"
+        }
 
     private sealed interface CellValue {
         data class Text(val value: String) : CellValue

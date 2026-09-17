@@ -43,7 +43,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import de.beyerl.babytracker.data.Event
 import de.beyerl.babytracker.data.EventRepository
 import de.beyerl.babytracker.data.EventType
+import de.beyerl.babytracker.data.SleepMarker
 import de.beyerl.babytracker.ui.DayViewModel
+import de.beyerl.babytracker.ui.label
 import de.beyerl.babytracker.ui.pointCategories
 import de.beyerl.babytracker.ui.ui
 import java.time.Instant
@@ -120,14 +122,15 @@ fun DayScreen(
                 else vm.update(e.copy(startTime = dt.toEpochMillis(), note = note?.ifBlank { null }))
                 editorType = null; editing = null
             },
-            onConfirmSleep = { start, end, note ->
+            onConfirmSleep = { start, end, marker, note ->
                 val e = editing
-                if (e == null) vm.addSleep(start, end, note)
+                if (e == null) vm.addSleep(start, end, marker, note)
                 else vm.update(
                     e.copy(
                         startTime = start.toEpochMillis(),
                         endTime = end.toEpochMillis(),
                         note = note?.ifBlank { null },
+                        sleepMarker = marker,
                     )
                 )
                 editorType = null; editing = null
@@ -217,6 +220,9 @@ private fun EventRow(event: Event, onClick: () -> Unit, onDelete: () -> Unit) {
                 Text(ui.label, fontWeight = FontWeight.SemiBold)
                 val time = formatTime(event)
                 Text(time, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                if (event.sleepMarker != SleepMarker.NONE) {
+                    Text(event.sleepMarker.label, style = MaterialTheme.typography.bodySmall, color = ui.color)
+                }
                 event.note?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
             }
             IconButton(onClick = onDelete) {
