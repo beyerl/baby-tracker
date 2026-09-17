@@ -1,6 +1,5 @@
 package de.beyerl.babytracker.ui.analytics
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,7 +14,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
@@ -27,6 +28,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -36,19 +39,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.beyerl.babytracker.data.EventRepository
 import de.beyerl.babytracker.data.EventType
@@ -60,6 +57,12 @@ import java.time.format.DateTimeFormatter
 
 private val dayFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
+/** Tabs of the analytics screen; all share the Von/Bis range. */
+private enum class AnalyticsTab(val title: String) {
+    ENTRIES("Einträge"),
+    SLEEP_TIMES("Schlafenszeiten"),
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
@@ -70,6 +73,7 @@ fun AnalyticsScreen(
     val data by vm.data.collectAsState()
     val range by vm.range.collectAsState()
 
+    var tab by rememberSaveable { mutableStateOf(AnalyticsTab.ENTRIES) }
     // Categories currently hidden via the legend; empty = all lines shown.
     var hidden by remember { mutableStateOf(emptySet<EventType>()) }
 
@@ -88,44 +92,72 @@ fun AnalyticsScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
+                .padding(padding),
         ) {
-            Text("Einträge pro Tag", style = MaterialTheme.typography.titleMedium)
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 DateField("Von", range.start, Modifier.weight(1f)) { vm.setStart(it) }
                 DateField("Bis", range.end, Modifier.weight(1f)) { vm.setEnd(it) }
             }
 
-            val hasData = data.series.values.any { list -> list.any { it > 0 } }
-            if (!hasData) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Keine Einträge in diesem Zeitraum", color = MaterialTheme.colorScheme.outline)
+            ScrollableTabRow(selectedTabIndex = tab.ordinal, edgePadding = 16.dp) {
+                AnalyticsTab.entries.forEach { t ->
+                    Tab(selected = t == tab, onClick = { tab = t }, text = { Text(t.title) })
                 }
-            } else {
-                LineChart(
-                    data = data,
-                    visible = EventType.entries.toSet() - hidden,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(280.dp)
-                        .padding(vertical = 12.dp),
-                )
-                Legend(
-                    hidden = hidden,
-                    onToggle = { type ->
-                        hidden = if (type in hidden) hidden - type else hidden + type
-                    },
-                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+            ) {
+                when (tab) {
+                    AnalyticsTab.ENTRIES -> EntriesTab(
+                        data = data,
+                        hidden = hidden,
+                        onToggle = { type -> hidden = if (type in hidden) hidden - type else hidden + type },
+                    )
+                    AnalyticsTab.SLEEP_TIMES -> SleepTimesTab(data)
+                }
             }
         }
     }
+}
+
+/** Tab "Einträge": daily event counts, one line per category, with a toggleable legend. */
+@Composable
+private fun EntriesTab(
+    data: AnalyticsData,
+    hidden: Set<EventType>,
+    onToggle: (EventType) -> Unit,
+) {
+    Text("Einträge pro Tag", style = MaterialTheme.typography.titleMedium)
+
+    val hasData = data.series.values.any { list -> list.any { it > 0 } }
+    if (!hasData) {
+        EmptyHint("Keine Einträge in diesem Zeitraum")
+        return
+    }
+    val visible = EventType.entries.filter { it !in hidden }
+    LineChart(
+        dates = data.dates,
+        lines = visible.mapNotNull { type ->
+            data.series[type]?.let { counts -> ChartLine(counts.map { it.toFloat() }, type.ui.color) }
+        },
+        // Scale to the tallest currently visible line so hiding a dominant
+        // category zooms in on the rest.
+        yAxis = countAxis(visible.flatMap { data.series[it].orEmpty() }.maxOrNull() ?: 0),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(280.dp)
+            .padding(vertical = 12.dp),
+    )
+    Legend(hidden = hidden, onToggle = onToggle)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -159,103 +191,6 @@ private fun DateField(
             },
         ) {
             DatePicker(state = state)
-        }
-    }
-}
-
-@Composable
-private fun LineChart(
-    data: AnalyticsData,
-    visible: Set<EventType>,
-    modifier: Modifier = Modifier,
-) {
-    val textMeasurer = rememberTextMeasurer()
-    val axisColor = MaterialTheme.colorScheme.outlineVariant
-    val labelColor = MaterialTheme.colorScheme.outline
-    val dateFmt = remember { DateTimeFormatter.ofPattern("dd.MM.") }
-
-    // Scale to the tallest currently visible line so hiding a dominant
-    // category zooms in on the rest.
-    val maxCount = (visible.flatMap { data.series[it].orEmpty() }.maxOrNull() ?: 0)
-        .coerceAtLeast(1)
-
-    Canvas(modifier) {
-        val leftPad = 30.dp.toPx()
-        val bottomPad = 20.dp.toPx()
-        val topPad = 8.dp.toPx()
-        val rightPad = 8.dp.toPx()
-        val plotW = size.width - leftPad - rightPad
-        val plotH = size.height - topPad - bottomPad
-        val n = data.dates.size
-        val xStep = if (n > 1) plotW / (n - 1) else 0f
-
-        fun xAt(i: Int): Float = if (n > 1) leftPad + i * xStep else leftPad + plotW / 2f
-        fun yAt(v: Int): Float = topPad + plotH - (v.toFloat() / maxCount) * plotH
-
-        // Horizontal grid lines + y-axis value labels.
-        val steps = minOf(maxCount, 4)
-        for (s in 0..steps) {
-            val value = maxCount * s / steps
-            val y = yAt(value)
-            drawLine(
-                color = axisColor.copy(alpha = 0.4f),
-                start = Offset(leftPad, y),
-                end = Offset(leftPad + plotW, y),
-                strokeWidth = 1f,
-            )
-            val layout = textMeasurer.measure(
-                value.toString(),
-                style = TextStyle(fontSize = 9.sp, color = labelColor),
-            )
-            drawText(
-                layout,
-                topLeft = Offset(leftPad - layout.size.width - 4.dp.toPx(), y - layout.size.height / 2f),
-            )
-        }
-
-        // Axes.
-        drawLine(axisColor, Offset(leftPad, topPad), Offset(leftPad, topPad + plotH), strokeWidth = 1.dp.toPx())
-        drawLine(
-            axisColor,
-            Offset(leftPad, topPad + plotH),
-            Offset(leftPad + plotW, topPad + plotH),
-            strokeWidth = 1.dp.toPx(),
-        )
-
-        // x-axis date labels (first and, if distinct, last).
-        val firstLabel = textMeasurer.measure(
-            data.dates.first().format(dateFmt),
-            style = TextStyle(fontSize = 9.sp, color = labelColor),
-        )
-        drawText(firstLabel, topLeft = Offset(leftPad, topPad + plotH + 4.dp.toPx()))
-        if (n > 1) {
-            val lastLabel = textMeasurer.measure(
-                data.dates.last().format(dateFmt),
-                style = TextStyle(fontSize = 9.sp, color = labelColor),
-            )
-            drawText(
-                lastLabel,
-                topLeft = Offset(leftPad + plotW - lastLabel.size.width, topPad + plotH + 4.dp.toPx()),
-            )
-        }
-
-        // One line per visible category.
-        for (type in EventType.entries) {
-            if (type !in visible) continue
-            val values = data.series[type] ?: continue
-            val color = type.ui.color
-            val path = Path()
-            values.forEachIndexed { i, v ->
-                val x = xAt(i)
-                val y = yAt(v)
-                if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
-            }
-            drawPath(path, color = color, style = Stroke(width = 2.dp.toPx()))
-            if (n <= 62) {
-                values.forEachIndexed { i, v ->
-                    drawCircle(color, radius = 2.5.dp.toPx(), center = Offset(xAt(i), yAt(v)))
-                }
-            }
         }
     }
 }

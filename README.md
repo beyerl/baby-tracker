@@ -20,10 +20,13 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
 - **Excel-Import** (`.xlsx`) über den Upload-Button – Daten wahlweise **hinzufügen**
   oder **ersetzen**. Liest das eigene Exportformat (Spalten Datum, Start, Ende,
   Kategorie, Notiz, Markierung); Dateien ohne Markierungs-Spalte bleiben lesbar.
-- **Auswertung**: Liniendiagramm der Einträge pro Tag für alle vier Kategorien
-  (einzelne Linien, nicht gestapelt) mit klickbarer Legende zum Ein-/Ausblenden
-  einzelner Kategorien. Zeitraum über Von/Bis-Datepicker einschränkbar
-  (Standard: aktueller Monat).
+- **Auswertung** in Reitern, alle mit gemeinsamem Zeitraum (Von/Bis-Datepicker,
+  Standard: aktueller Monat):
+  - **Einträge**: Liniendiagramm der Einträge pro Tag für alle vier Kategorien
+    (einzelne Linien, nicht gestapelt) mit klickbarer Legende zum Ein-/Ausblenden
+    einzelner Kategorien.
+  - **Schlafenszeiten**: Uhrzeit des Aufwachens und des Einschlafens pro Tag aus
+    den Schlaf-Markierungen (Einschlafen nach Mitternacht zählt zum Vorabend).
 - Vollständig **offline**, lokale Speicherung via Room.
 
 ## Tech-Stack

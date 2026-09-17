@@ -11,3 +11,6 @@ val StoolColor = Color(0xFFF9A825) // Gaki / Stuhlgang – amber
 val PeeColor = Color(0xFF43A047)   // Lulu / Pinkeln – green
 val FeedColor = Color(0xFF1E88E5)  // Füttern – blue
 val SleepColor = Color(0xFF7E57C2) // Schlaf – purple
+
+// Statistic colors
+val WakeColor = Color(0xFFFB8C00)  // Aufwachen / Wachzeit – orange

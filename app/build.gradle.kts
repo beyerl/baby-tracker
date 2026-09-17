@@ -13,8 +13,8 @@ android {
         applicationId = "de.beyerl.babytracker"
         minSdk = 26
         targetSdk = 34
-        versionCode = 6
-        versionName = "0.6.0"
+        versionCode = 7
+        versionName = "0.7.0"
         vectorDrawables { useSupportLibrary = true }
     }
 
@@ -46,6 +46,8 @@ android {
         unitTests {
             // Robolectric tests (Room migration, Excel round trip) need the merged manifest.
             isIncludeAndroidResources = true
+            // List every test result in the build output (visible in the CI log).
+            all { it.testLogging { events("passed", "skipped", "failed") } }
         }
     }
 }

@@ -6,10 +6,13 @@ import androidx.lifecycle.viewModelScope
 import de.beyerl.babytracker.data.Event
 import de.beyerl.babytracker.data.EventRepository
 import de.beyerl.babytracker.data.EventType
+import de.beyerl.babytracker.stats.SleepStats
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import java.time.Instant
 import java.time.LocalDate
@@ -20,20 +23,25 @@ import java.time.ZoneId
 data class DateRange(val start: LocalDate, val end: LocalDate)
 
 /**
- * Daily event counts per category, aligned to a continuous day axis
- * (`dates[i]` corresponds to `series[type][i]`). Days without events are 0 so
- * the line chart shows real gaps rather than skipping dates.
+ * Everything the analytics tabs show, aligned to a continuous day axis
+ * (`dates[i]` corresponds to index i of every series). Daily counts are 0 on
+ * days without events so the line chart shows real gaps rather than skipping
+ * dates; statistic values are null on days without a value.
  */
 data class AnalyticsData(
     val dates: List<LocalDate>,
     val series: Map<EventType, List<Int>>,
+    val sleepTimes: SleepTimesData,
 ) {
     val isEmpty: Boolean get() = dates.isEmpty()
 
     companion object {
-        val EMPTY = AnalyticsData(emptyList(), emptyMap())
+        val EMPTY = AnalyticsData(emptyList(), emptyMap(), SleepTimesData(emptyList(), emptyList()))
     }
 }
+
+/** Wall-clock minutes of the morning wake-up and the evening bedtime (> 24 h after midnight) per day. */
+data class SleepTimesData(val wakeUp: List<Int?>, val bedtime: List<Int?>)
 
 class AnalyticsViewModel(repository: EventRepository) : ViewModel() {
 
@@ -45,7 +53,9 @@ class AnalyticsViewModel(repository: EventRepository) : ViewModel() {
     val data: StateFlow<AnalyticsData> =
         combine(repository.observeAll(), _range) { events, range ->
             events.toAnalyticsData(zone, range)
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AnalyticsData.EMPTY)
+        }
+            .flowOn(Dispatchers.Default)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AnalyticsData.EMPTY)
 
     /** Sets the range start; pushes the end out too if it would precede start. */
     fun setStart(date: LocalDate) {
@@ -86,5 +96,18 @@ private fun List<Event>.toAnalyticsData(zone: ZoneId, range: DateRange): Analyti
     val series = EventType.entries.associateWith { type ->
         dates.map { counts[it]?.get(type.ordinal) ?: 0 }
     }
-    return AnalyticsData(dates, series)
+
+    // Statistics run over all events and are then read for the range's days, so
+    // values assigned across the range boundary (e.g. a bedtime after midnight) stay intact.
+    val wakeUps = SleepStats.wakeUps(this, zone)
+    val bedtimes = SleepStats.bedtimes(this, zone)
+
+    return AnalyticsData(
+        dates = dates,
+        series = series,
+        sleepTimes = SleepTimesData(
+            wakeUp = dates.map { wakeUps[it]?.clockMinutes },
+            bedtime = dates.map { bedtimes[it]?.clockMinutes },
+        ),
+    )
 }
