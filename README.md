@@ -5,7 +5,8 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
 
 ## Features
 
-- **Monatsansicht** (Start): Kalender mit farbkodierten Zählern pro Tag und Kategorie.
+- **Monatsansicht** (Start): Kalender mit farbkodierten Zählern pro Tag für Füttern und
+  Schlaf (Stuhlgang und Pinkeln stehen in der Tagesansicht).
 - **Tagesansicht**: chronologische Liste aller Einträge mit Uhrzeit, Tageszusammenfassung
   inkl. Anzahl Schlaffenster.
 - Schnelles Erfassen per Kategorie-Button (Standardzeit = jetzt), Zeit anpassbar.

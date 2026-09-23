@@ -38,7 +38,8 @@ data class DaySummary(
     val feed: Int = 0,
     val sleepCount: Int = 0,
 ) {
-    val isEmpty: Boolean get() = stool == 0 && pee == 0 && feed == 0 && sleepCount == 0
+    /** The month grid shows feeding and sleep counts only. */
+    val hasCalendarDots: Boolean get() = feed > 0 || sleepCount > 0
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)

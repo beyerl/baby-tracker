@@ -57,9 +57,7 @@ import de.beyerl.babytracker.ui.DaySummary
 import de.beyerl.babytracker.ui.ImportResult
 import de.beyerl.babytracker.ui.MonthViewModel
 import de.beyerl.babytracker.ui.theme.FeedColor
-import de.beyerl.babytracker.ui.theme.PeeColor
 import de.beyerl.babytracker.ui.theme.SleepColor
-import de.beyerl.babytracker.ui.theme.StoolColor
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -237,24 +235,19 @@ private fun DayCell(
                 fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
             )
             Spacer(Modifier.height(2.dp))
-            if (summary != null && !summary.isEmpty) {
+            if (summary != null && summary.hasCalendarDots) {
                 CountRow(summary)
             }
         }
     }
 }
 
+/** Feeding and sleep counts only; stool and pee stay in the day view. */
 @Composable
 private fun CountRow(summary: DaySummary) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(horizontalArrangement = Arrangement.Center) {
-            if (summary.stool > 0) CountChip(summary.stool, StoolColor)
-            if (summary.pee > 0) CountChip(summary.pee, PeeColor)
-        }
-        Row(horizontalArrangement = Arrangement.Center) {
-            if (summary.feed > 0) CountChip(summary.feed, FeedColor)
-            if (summary.sleepCount > 0) CountChip(summary.sleepCount, SleepColor)
-        }
+    Row(horizontalArrangement = Arrangement.Center) {
+        if (summary.feed > 0) CountChip(summary.feed, FeedColor)
+        if (summary.sleepCount > 0) CountChip(summary.sleepCount, SleepColor)
     }
 }
 
