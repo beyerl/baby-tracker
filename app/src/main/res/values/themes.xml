@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.BabyTracker" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Dark window background so no white flash shows before Compose draws. -->
+    <style name="Theme.BabyTracker" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/night</item>
+    </style>
 </resources>

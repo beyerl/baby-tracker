@@ -1,43 +1,42 @@
 package de.beyerl.babytracker.ui.theme
 
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 
-private val LightColors = lightColorScheme(
-    primary = Purple,
-    secondary = PurpleDark,
+/**
+ * The app is always dark, modelled on the Napper night look. Dynamic (Material
+ * You) colors are not used so the design is the same on every device.
+ */
+private val NightColors = darkColorScheme(
+    primary = Lavender,
+    onPrimary = Night,
+    primaryContainer = LavenderDark,
+    onPrimaryContainer = OnNight,
+    secondary = LavenderLight,
+    onSecondary = Night,
+    secondaryContainer = NightSurfaceHigh,
+    onSecondaryContainer = OnNight,
     tertiary = FeedColor,
-)
-
-private val DarkColors = darkColorScheme(
-    primary = PurpleLight,
-    secondary = Purple,
-    tertiary = FeedColor,
+    background = Night,
+    onBackground = OnNight,
+    surface = Night,
+    onSurface = OnNight,
+    surfaceVariant = NightSurfaceHigh,
+    onSurfaceVariant = OnNightMuted,
+    surfaceContainerLowest = Night,
+    surfaceContainerLow = NightSurface,
+    surfaceContainer = NightSurface,
+    surfaceContainerHigh = NightSurfaceHigh,
+    surfaceContainerHighest = NightSurfaceHigh,
+    outline = OnNightMuted,
+    outlineVariant = NightOutline,
 )
 
 @Composable
-fun BabyTrackerTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
-    content: @Composable () -> Unit,
-) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColors
-        else -> LightColors
-    }
+fun BabyTrackerTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = NightColors,
         typography = Typography,
         content = content,
     )

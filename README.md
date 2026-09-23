@@ -41,6 +41,8 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
   - **Fütterungen**: durchschnittlicher Abstand zwischen zwei Fütterungen pro Tag
     (gezählt am Tag der späteren Fütterung; Abstände über 16 h gelten als
     Erfassungslücke) und Durchschnitt über den gesamten Zeitraum.
+- **Dunkles Design** im Stil der Napper-App (Nachtblau, Lavendel-Akzent), unabhängig
+  von System-Theme und Material-You-Farben.
 - Vollständig **offline**, lokale Speicherung via Room.
 
 ## Tech-Stack
