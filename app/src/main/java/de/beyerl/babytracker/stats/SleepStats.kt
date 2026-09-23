@@ -2,6 +2,7 @@ package de.beyerl.babytracker.stats
 
 import de.beyerl.babytracker.data.Event
 import de.beyerl.babytracker.data.EventType
+import de.beyerl.babytracker.data.SleepMarker
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -39,6 +40,12 @@ object SleepStats {
 
     /** Longest plausible night; longer bedtime/wake-up pairs count as mis-marked. */
     const val MAX_NIGHT_HOURS = 20L
+
+    /** Without a wake-up mark, sleep starting before this hour is not a nap. */
+    const val NAP_EARLIEST_HOUR = 5
+
+    /** Without a bedtime mark, sleep starting at or after this hour is not a nap. */
+    const val NAP_LATEST_HOUR = 20
 
     /**
      * Nights from each evening's [bedtimes] entry to the [wakeUps] entry of the
@@ -95,6 +102,34 @@ object SleepStats {
             if (slept > 0) result[day] = value(to - from, slept)
         }
         return result
+    }
+
+    /**
+     * Daytime naps per day, each as start/end epoch millis, sorted by start. A nap
+     * is an unmarked SLEEP event that starts that day outside every night
+     * (bedtime → wake-up), after the day's wake-up and before its bedtime. Where
+     * the day has no wake-up or bedtime mark, [NAP_EARLIEST_HOUR] and
+     * [NAP_LATEST_HOUR] stand in for them.
+     */
+    fun naps(events: List<Event>, zone: ZoneId): Map<LocalDate, List<Pair<Long, Long>>> {
+        val nights = nights(events, zone).values
+        val wakeUps = wakeUps(events, zone)
+        val bedtimes = bedtimes(events, zone)
+        val result = HashMap<LocalDate, MutableList<Pair<Long, Long>>>()
+        for (e in events) {
+            val end = e.endTime ?: continue
+            if (e.type != EventType.SLEEP || e.sleepMarker != SleepMarker.NONE) continue
+            if (nights.any { e.startTime >= it.bedtime && e.startTime < it.wakeUp }) continue
+            val local = Instant.ofEpochMilli(e.startTime).atZone(zone)
+            val day = local.toLocalDate()
+            val earliest = wakeUps[day]?.epochMillis
+                ?: day.atTime(NAP_EARLIEST_HOUR, 0).atZone(zone).toInstant().toEpochMilli()
+            val latest = bedtimes[day]?.epochMillis
+                ?: day.atTime(NAP_LATEST_HOUR, 0).atZone(zone).toInstant().toEpochMilli()
+            if (e.startTime < earliest || e.startTime >= latest) continue
+            result.getOrPut(day) { ArrayList() }.add(e.startTime to end)
+        }
+        return result.mapValues { (_, naps) -> naps.sortedBy { it.first } }
     }
 
     /**

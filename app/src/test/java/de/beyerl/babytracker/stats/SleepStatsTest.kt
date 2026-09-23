@@ -192,6 +192,40 @@ class SleepStatsTest {
     }
 
     @Test
+    fun naps_areUnmarkedDaySleepsBetweenWakeUpAndBedtime_sorted() {
+        val events = listOf(
+            sleep("2026-09-14T19:45", "2026-09-15T02:00", SleepMarker.BEDTIME),
+            sleep("2026-09-15T02:30", "2026-09-15T07:00", SleepMarker.WAKE_UP),
+            sleep("2026-09-15T02:05", "2026-09-15T02:20"), // inside the night: not a nap
+            sleep("2026-09-15T14:00", "2026-09-15T15:00"),
+            sleep("2026-09-15T09:30", "2026-09-15T10:15"),
+            sleep("2026-09-15T20:00", "2026-09-16T06:30", SleepMarker.BOTH),
+            sleep("2026-09-15T20:30", "2026-09-15T21:00"), // after bedtime: not a nap
+        )
+
+        val naps = SleepStats.naps(events, zone)
+
+        assertEquals(setOf(day("2026-09-15")), naps.keys)
+        assertEquals(
+            listOf(at("2026-09-15T09:30") to at("2026-09-15T10:15"), at("2026-09-15T14:00") to at("2026-09-15T15:00")),
+            naps.getValue(day("2026-09-15")),
+        )
+    }
+
+    @Test
+    fun naps_withoutMarks_useFallbackHours() {
+        val events = listOf(
+            sleep("2026-09-15T03:00", "2026-09-15T04:00"),
+            sleep("2026-09-15T11:00", "2026-09-15T12:00"),
+            sleep("2026-09-15T20:15", "2026-09-15T23:00"),
+        )
+
+        val naps = SleepStats.naps(events, zone)
+
+        assertEquals(listOf(at("2026-09-15T11:00") to at("2026-09-15T12:00")), naps.getValue(day("2026-09-15")))
+    }
+
+    @Test
     fun unmarkedSleepAndOtherCategories_areIgnored() {
         val events = listOf(
             sleep("2026-09-14T20:00", "2026-09-15T07:00"),

@@ -22,3 +22,13 @@ val SleepColor = Lavender          // Schlaf – lavender
 // Statistic colors
 val WakeColor = Color(0xFFF6A34B)    // Aufwachen / Wachzeit – orange
 val BedtimeColor = Color(0xFFF08A5D) // Schlafenszeit – sunset orange
+val SunriseColor = Color(0xFFF5C451) // Aufgewacht marker – sunrise yellow
+
+/** Nap colors by order in the day (first … fifth and later), as in Napper's sleep pattern. */
+val NapColors = listOf(
+    Color(0xFF7B78F0), // erstes – lavender
+    Color(0xFFF2F1FF), // zweites – white
+    Color(0xFF4F4BB0), // drittes – indigo
+    Color(0xFFA9A6FF), // viertes – light lavender
+    Color(0xFF5E7BEF), // fünftes+ – blue violet
+)

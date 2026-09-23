@@ -37,6 +37,10 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
   - **Gesamtschlaf**: alle Schlafzeiten eines Kalendertags 00:00–24:00 –
     Nachtschlaf-Anteile und alle Nickerchen (Schlaf über Mitternacht wird
     aufgeteilt, nur abgeschlossene Tage), mit Wochendurchschnitt (Mo–So) darunter.
+  - **Schlafmuster**: eine Zeile pro Tag mit Aufwachzeit, Nickerchen (farbig nach
+    Reihenfolge: erstes … fünftes+) und Schlafenszeit auf einer Uhrzeit-Achse; per
+    Schalter *Relativ zum Aufwachen anzeigen*. Nickerchen = Schlaf ohne Markierung
+    außerhalb der Nacht, nach der Aufwach- und vor der Schlafenszeit des Tages.
   - **Wachzeit**: 24 h minus alle Schlafzeiten eines Kalendertags (Schlaf über
     Mitternacht wird aufgeteilt, nur abgeschlossene Tage), mit
     Wochendurchschnitt (Mo–So) darunter.

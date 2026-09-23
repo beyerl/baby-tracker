@@ -39,6 +39,7 @@ data class AnalyticsData(
     val awake: AwakeData,
     val dailySleep: DailySleepData,
     val feeding: FeedingData,
+    val pattern: List<DayPattern>,
 ) {
     val isEmpty: Boolean get() = dates.isEmpty()
 
@@ -51,6 +52,7 @@ data class AnalyticsData(
             awake = AwakeData(emptyList(), emptyList()),
             dailySleep = DailySleepData(emptyList(), emptyList()),
             feeding = FeedingData(emptyList(), null, 0),
+            pattern = emptyList(),
         )
     }
 }
@@ -74,6 +76,17 @@ data class AwakeData(val values: List<Long?>, val weeks: List<WeekAverage>)
 
 /** Total sleep ("Gesamtschlaf") per completed calendar day in minutes and its Monday–Sunday averages. */
 data class DailySleepData(val values: List<Long?>, val weeks: List<WeekAverage>)
+
+/**
+ * One day of the "Schlafmuster" chart, all in minutes after midnight of [date]:
+ * wake-up, bedtime (past 24 h after midnight) and each nap as start/end.
+ */
+data class DayPattern(
+    val date: LocalDate,
+    val wakeUp: Int?,
+    val bedtime: Int?,
+    val naps: List<Pair<Int, Int>>,
+)
 
 /** Average gap between feedings in minutes: per day, and over all [rangeGapCount] gaps in the range. */
 data class FeedingData(
@@ -146,6 +159,7 @@ private fun List<Event>.toAnalyticsData(zone: ZoneId, range: DateRange, today: L
     val completedDays = dates.filter { it.isBefore(today) }
     val awake = SleepStats.awakeMinutesPerDay(this, zone, completedDays)
     val dailySleep = SleepStats.sleepMinutesPerDay(this, zone, completedDays)
+    val naps = SleepStats.naps(this, zone)
     val feedingGaps = FeedingStats.gapsPerDay(this, zone)
     val feedingGapsInRange = dates.mapNotNull { feedingGaps[it] }
     val rangeGapCount = feedingGapsInRange.sumOf { it.count }
@@ -180,5 +194,15 @@ private fun List<Event>.toAnalyticsData(zone: ZoneId, range: DateRange, today: L
             },
             rangeGapCount = rangeGapCount,
         ),
+        pattern = dates.map { date ->
+            val midnight = date.atStartOfDay(zone).toInstant().toEpochMilli()
+            fun minutesOf(millis: Long) = ((millis - midnight) / 60_000).toInt()
+            DayPattern(
+                date = date,
+                wakeUp = wakeUps[date]?.let { minutesOf(it.epochMillis) },
+                bedtime = bedtimes[date]?.let { minutesOf(it.epochMillis) },
+                naps = naps[date].orEmpty().map { (start, end) -> minutesOf(start) to minutesOf(end) },
+            )
+        },
     )
 }
