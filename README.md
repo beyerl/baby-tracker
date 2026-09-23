@@ -32,6 +32,9 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
     von der Schlafenszeit bis zur Aufwachzeit am Folgetag – und **Wachphasen
     nachts** (Zeit von Schlafens- bis Aufwachzeit minus geschlafene Zeit), mit
     Wochendurchschnitten (Mo–So) darunter.
+  - **Gesamtschlaf**: alle Schlafzeiten eines Kalendertags 00:00–24:00 –
+    Nachtschlaf-Anteile und alle Nickerchen (Schlaf über Mitternacht wird
+    aufgeteilt, nur abgeschlossene Tage), mit Wochendurchschnitt (Mo–So) darunter.
   - **Wachzeit**: 24 h minus alle Schlafzeiten eines Kalendertags (Schlaf über
     Mitternacht wird aufgeteilt, nur abgeschlossene Tage), mit
     Wochendurchschnitt (Mo–So) darunter.

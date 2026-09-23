@@ -108,6 +108,27 @@ internal fun AwakeTab(data: AnalyticsData) {
     )
 }
 
+/**
+ * Tab "Gesamtschlaf": all sleep per completed calendar day 00:00–24:00 (night
+ * sleep and naps), with Monday–Sunday averages below.
+ */
+@Composable
+internal fun DailySleepTab(data: AnalyticsData) {
+    HourChart(
+        title = "Gesamtschlaf",
+        caption = "Alle Schlafzeiten des Kalendertags 00:00–24:00 inkl. Nickerchen; nur abgeschlossene Tage",
+        dates = data.dates,
+        minutes = data.dailySleep.values,
+        color = SleepColor,
+        yLabel = ::formatHours,
+        emptyText = "Keine Schlaf-Einträge an abgeschlossenen Tagen im Zeitraum",
+    )
+    WeeklyAverageTable(
+        columns = listOf(WeeklyColumn("Gesamtschlaf", data.dailySleep.weeks)),
+        countText = { if (it == 1) "1 Tag" else "$it Tage" },
+    )
+}
+
 /** Tab "Fütterungen": average gap between two feedings per day, and over the whole range. */
 @Composable
 internal fun FeedingTab(data: AnalyticsData) {

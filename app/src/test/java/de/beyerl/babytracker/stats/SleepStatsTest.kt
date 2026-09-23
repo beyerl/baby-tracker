@@ -169,6 +169,29 @@ class SleepStatsTest {
     }
 
     @Test
+    fun dailySleep_splitsAtMidnightAndCountsNapsAndOverlapsOnce() {
+        val events = listOf(
+            sleep("2026-09-14T20:00", "2026-09-15T07:00", SleepMarker.BOTH),
+            sleep("2026-09-15T13:00", "2026-09-15T14:30"),
+            sleep("2026-09-15T14:00", "2026-09-15T15:00"), // overlaps the nap by 30 min
+        )
+
+        val slept = SleepStats.sleepMinutesPerDay(events, zone, listOf(day("2026-09-14"), day("2026-09-15")))
+
+        assertEquals(4 * 60L, slept.getValue(day("2026-09-14"))) // 20:00-24:00
+        assertEquals(9 * 60L, slept.getValue(day("2026-09-15"))) // 00:00-07:00 + 13:00-15:00
+    }
+
+    @Test
+    fun dailySleep_leavesOutDaysWithoutSleep() {
+        val events = listOf(sleep("2026-09-15T13:00", "2026-09-15T14:00"))
+
+        val slept = SleepStats.sleepMinutesPerDay(events, zone, listOf(day("2026-09-14"), day("2026-09-15")))
+
+        assertEquals(mapOf(day("2026-09-15") to 60L), slept)
+    }
+
+    @Test
     fun unmarkedSleepAndOtherCategories_areIgnored() {
         val events = listOf(
             sleep("2026-09-14T20:00", "2026-09-15T07:00"),

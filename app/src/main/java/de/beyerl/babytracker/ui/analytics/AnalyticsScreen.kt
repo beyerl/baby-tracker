@@ -62,6 +62,7 @@ private enum class AnalyticsTab(val title: String) {
     ENTRIES("Einträge"),
     SLEEP_TIMES("Schlafenszeiten"),
     NIGHT_SLEEP("Nachtschlaf"),
+    DAILY_SLEEP("Gesamtschlaf"),
     AWAKE("Wachzeit"),
     FEEDING("Fütterungen"),
 }
@@ -127,6 +128,7 @@ fun AnalyticsScreen(
                     )
                     AnalyticsTab.SLEEP_TIMES -> SleepTimesTab(data)
                     AnalyticsTab.NIGHT_SLEEP -> NightSleepTab(data)
+                    AnalyticsTab.DAILY_SLEEP -> DailySleepTab(data)
                     AnalyticsTab.AWAKE -> AwakeTab(data)
                     AnalyticsTab.FEEDING -> FeedingTab(data)
                 }

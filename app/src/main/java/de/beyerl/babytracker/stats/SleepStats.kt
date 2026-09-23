@@ -67,14 +67,32 @@ object SleepStats {
      * day. Sleep across midnight is split between both days; days without any
      * sleep are left out. Callers pass completed days only.
      */
-    fun awakeMinutesPerDay(events: List<Event>, zone: ZoneId, days: List<LocalDate>): Map<LocalDate, Long> {
+    fun awakeMinutesPerDay(events: List<Event>, zone: ZoneId, days: List<LocalDate>): Map<LocalDate, Long> =
+        perCalendarDay(events, zone, days) { dayMillis, slept -> (dayMillis - slept) / 60_000 }
+
+    /**
+     * Total sleep ("Gesamtschlaf") per calendar day 00:00–24:00 in minutes: the
+     * time covered by SLEEP events that day, night sleep and naps alike. Sleep
+     * across midnight is split between both days; days without any sleep are
+     * left out. Callers pass completed days only.
+     */
+    fun sleepMinutesPerDay(events: List<Event>, zone: ZoneId, days: List<LocalDate>): Map<LocalDate, Long> =
+        perCalendarDay(events, zone, days) { _, slept -> slept / 60_000 }
+
+    /** [value] of (day length, slept millis) for each of [days] with any sleep. */
+    private inline fun perCalendarDay(
+        events: List<Event>,
+        zone: ZoneId,
+        days: List<LocalDate>,
+        value: (dayMillis: Long, sleptMillis: Long) -> Long,
+    ): Map<LocalDate, Long> {
         val sleeps = events.sleepIntervals()
         val result = HashMap<LocalDate, Long>()
         for (day in days) {
             val from = day.atStartOfDay(zone).toInstant().toEpochMilli()
             val to = day.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
             val slept = coveredMillis(sleeps, from, to)
-            if (slept > 0) result[day] = (to - from - slept) / 60_000
+            if (slept > 0) result[day] = value(to - from, slept)
         }
         return result
     }
