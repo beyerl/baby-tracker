@@ -21,8 +21,10 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
 - **Excel-Import** (`.xlsx`) über den Upload-Button – Daten wahlweise **hinzufügen**
   oder **ersetzen**. Liest das eigene Exportformat (Spalten Datum, Start, Ende,
   Kategorie, Notiz, Markierung); Dateien ohne Markierungs-Spalte bleiben lesbar.
-- **Auswertung** in Reitern, alle mit gemeinsamem Zeitraum (Von/Bis-Datepicker,
-  Standard: aktueller Monat):
+- **Auswertung** in Reitern (Pillen-Auswahl), alle mit gemeinsamem Zeitraum
+  (Von/Bis-Datepicker, Standard: aktueller Monat). Diagramme im Napper-Stil in
+  Karten: geglättete Linie mit Flächenfüllung, gepunktete Durchschnittslinie,
+  „Durchschnittlich: …"-Pille darunter; bis 10 Tage mit Wochentag je Tag:
   - **Einträge**: Liniendiagramm der Einträge pro Tag für alle vier Kategorien
     (einzelne Linien, nicht gestapelt) mit klickbarer Legende zum Ein-/Ausblenden
     einzelner Kategorien.

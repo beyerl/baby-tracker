@@ -1,7 +1,9 @@
 package de.beyerl.babytracker.ui.analytics
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -26,10 +29,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScrollableTabRow
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -44,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -108,11 +110,7 @@ fun AnalyticsScreen(
                 DateField("Bis", range.end, Modifier.weight(1f)) { vm.setEnd(it) }
             }
 
-            ScrollableTabRow(selectedTabIndex = tab.ordinal, edgePadding = 16.dp) {
-                AnalyticsTab.entries.forEach { t ->
-                    Tab(selected = t == tab, onClick = { tab = t }, text = { Text(t.title) })
-                }
-            }
+            TabPills(selected = tab, onSelect = { tab = it })
 
             Column(
                 modifier = Modifier
@@ -144,8 +142,16 @@ private fun EntriesTab(
     hidden: Set<EventType>,
     onToggle: (EventType) -> Unit,
 ) {
-    Text("Einträge pro Tag", style = MaterialTheme.typography.titleMedium)
+    SectionTitle("Einträge pro Tag")
+    ChartCard { EntriesChart(data, hidden, onToggle) }
+}
 
+@Composable
+private fun EntriesChart(
+    data: AnalyticsData,
+    hidden: Set<EventType>,
+    onToggle: (EventType) -> Unit,
+) {
     val hasData = data.series.values.any { list -> list.any { it > 0 } }
     if (!hasData) {
         EmptyHint("Keine Einträge in diesem Zeitraum")
@@ -178,7 +184,7 @@ private fun DateField(
 ) {
     var showPicker by remember { mutableStateOf(false) }
 
-    OutlinedButton(onClick = { showPicker = true }, modifier = modifier) {
+    FilledTonalButton(onClick = { showPicker = true }, modifier = modifier) {
         Icon(Icons.Filled.DateRange, contentDescription = null)
         Spacer(Modifier.size(6.dp))
         Text("$label: ${date.format(dayFmt)}")
@@ -234,6 +240,40 @@ private fun Legend(
                     textDecoration = if (isOn) null else TextDecoration.LineThrough,
                 )
             }
+        }
+    }
+}
+
+/** Napper-style tab selector: horizontally scrolling pills, the selected one outlined in the accent color. */
+@Composable
+private fun TabPills(selected: AnalyticsTab, onSelect: (AnalyticsTab) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        AnalyticsTab.entries.forEach { t ->
+            val isSelected = t == selected
+            Text(
+                text = t.title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(
+                        if (isSelected) MaterialTheme.colorScheme.surfaceContainerHigh
+                        else MaterialTheme.colorScheme.surfaceContainer,
+                    )
+                    .border(
+                        width = 2.dp,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                        shape = RoundedCornerShape(50),
+                    )
+                    .clickable { onSelect(t) }
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+            )
         }
     }
 }
