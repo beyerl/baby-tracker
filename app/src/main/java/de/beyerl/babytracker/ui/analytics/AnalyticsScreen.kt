@@ -59,9 +59,10 @@ import java.time.format.DateTimeFormatter
 
 private val dayFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
-/** Tabs of the analytics screen; all share the Von/Bis range. */
+/** Tabs of the analytics screen; all but the forecast share the Von/Bis range. */
 private enum class AnalyticsTab(val title: String) {
     ENTRIES("Einträge"),
+    FORECAST("Prognose"),
     SLEEP_TIMES("Schlafenszeiten"),
     NIGHT_SLEEP("Nachtschlaf"),
     DAILY_SLEEP("Gesamtschlaf"),
@@ -79,6 +80,8 @@ fun AnalyticsScreen(
     val vm: AnalyticsViewModel = viewModel(factory = AnalyticsViewModel.Factory(repository))
     val data by vm.data.collectAsState()
     val range by vm.range.collectAsState()
+    val forecast by vm.forecast.collectAsState()
+    val now by vm.now.collectAsState()
 
     var tab by rememberSaveable { mutableStateOf(AnalyticsTab.ENTRIES) }
     // Categories currently hidden via the legend; empty = all lines shown.
@@ -101,17 +104,20 @@ fun AnalyticsScreen(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                DateField("Von", range.start, Modifier.weight(1f)) { vm.setStart(it) }
-                DateField("Bis", range.end, Modifier.weight(1f)) { vm.setEnd(it) }
-            }
-
             TabPills(selected = tab, onSelect = { tab = it })
+
+            // The forecast is always for today; every other tab uses the range.
+            if (tab != AnalyticsTab.FORECAST) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    DateField("Von", range.start, Modifier.weight(1f)) { vm.setStart(it) }
+                    DateField("Bis", range.end, Modifier.weight(1f)) { vm.setEnd(it) }
+                }
+            }
 
             Column(
                 modifier = Modifier
@@ -125,6 +131,7 @@ fun AnalyticsScreen(
                         hidden = hidden,
                         onToggle = { type -> hidden = if (type in hidden) hidden - type else hidden + type },
                     )
+                    AnalyticsTab.FORECAST -> ForecastTab(forecast, now)
                     AnalyticsTab.SLEEP_TIMES -> SleepTimesTab(data)
                     AnalyticsTab.NIGHT_SLEEP -> NightSleepTab(data)
                     AnalyticsTab.DAILY_SLEEP -> DailySleepTab(data)

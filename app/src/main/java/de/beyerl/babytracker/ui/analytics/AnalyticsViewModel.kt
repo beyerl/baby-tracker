@@ -6,7 +6,9 @@ import androidx.lifecycle.viewModelScope
 import de.beyerl.babytracker.data.Event
 import de.beyerl.babytracker.data.EventRepository
 import de.beyerl.babytracker.data.EventType
+import de.beyerl.babytracker.stats.DayForecast
 import de.beyerl.babytracker.stats.FeedingStats
+import de.beyerl.babytracker.stats.Forecast
 import de.beyerl.babytracker.stats.SleepStats
 import de.beyerl.babytracker.stats.WeekAverage
 import de.beyerl.babytracker.stats.weeklyAverages
@@ -14,7 +16,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import java.time.Instant
@@ -108,6 +114,23 @@ class AnalyticsViewModel(repository: EventRepository) : ViewModel() {
         }
             .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AnalyticsData.EMPTY)
+
+    /** Current time, ticking every minute so the forecast countdown stays fresh. */
+    val now: StateFlow<Long> = flow {
+        while (true) {
+            val time = System.currentTimeMillis()
+            emit(time)
+            delay(60_000 - time % 60_000)
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), System.currentTimeMillis())
+
+    /** Today's forecast from the previous week; independent of the selected range. */
+    val forecast: StateFlow<DayForecast?> =
+        combine(repository.observeAll(), now.map { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() }.distinctUntilChanged()) { events, today ->
+            Forecast.forDay(events, zone, today)
+        }
+            .flowOn(Dispatchers.Default)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** Sets the range start; pushes the end out too if it would precede start. */
     fun setStart(date: LocalDate) {

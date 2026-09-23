@@ -28,6 +28,13 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
   - **Einträge**: Liniendiagramm der Einträge pro Tag für alle vier Kategorien
     (einzelne Linien, nicht gestapelt) mit klickbarer Legende zum Ein-/Ausblenden
     einzelner Kategorien.
+  - **Prognose** (unabhängig vom Zeitraum): Vorhersage für heute aus den letzten
+    7 Tagen – das n-te Nickerchen bzw. die n-te Fütterung zum durchschnittlichen
+    Abstand ab dem Aufwachen (Nickerchen mit durchschnittlicher Dauer), Anzahl =
+    Median der Tage. Bereits erfasste Einträge ersetzen die Prognose, die übrigen
+    behalten ihren Abstand zum letzten Eintrag. Darstellung als Ring wie in Napper
+    (Aufwachzeit → Schlafenszeit, erfasst = ausgefüllt, Prognose = gepunktet) mit
+    Countdown zum nächsten Ereignis, Nickerchen-Gesamtdauer und Tagesablauf.
   - **Schlafenszeiten**: Uhrzeit des Aufwachens und des Einschlafens pro Tag aus
     den Schlaf-Markierungen (Einschlafen nach Mitternacht zählt zum Vorabend).
   - **Nachtschlaf**: geschlafene Zeit pro Nacht – Summe aller Schlaf-Einträge
