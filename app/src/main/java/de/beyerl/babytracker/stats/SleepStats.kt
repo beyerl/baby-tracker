@@ -18,7 +18,7 @@ data class Night(
     val date: LocalDate,
     val bedtime: Long,
     val wakeUp: Long,
-    /** Tracked sleep between bedtime and wake-up, in minutes ("Gesamtschlaf"). */
+    /** Tracked sleep between bedtime and wake-up, in minutes ("Nachtschlaf"). */
     val sleepMinutes: Long,
 ) {
     /** Time from bedtime to wake-up, in minutes. */

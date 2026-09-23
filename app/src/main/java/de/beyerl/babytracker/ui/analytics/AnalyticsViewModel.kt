@@ -57,7 +57,7 @@ data class AnalyticsData(
 data class SleepTimesData(val wakeUp: List<Int?>, val bedtime: List<Int?>)
 
 /**
- * Per night (at the evening's date), in minutes: tracked sleep ("Gesamtschlaf")
+ * Per night (at the evening's date), in minutes: tracked sleep ("Nachtschlaf")
  * and the time awake in between ("Wachphasen nachts"), each with Monday–Sunday averages.
  */
 data class NightSleepData(

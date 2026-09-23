@@ -61,7 +61,7 @@ private val dayFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy"
 private enum class AnalyticsTab(val title: String) {
     ENTRIES("Einträge"),
     SLEEP_TIMES("Schlafenszeiten"),
-    NIGHT_SLEEP("Gesamtschlaf"),
+    NIGHT_SLEEP("Nachtschlaf"),
     AWAKE("Wachzeit"),
     FEEDING("Fütterungen"),
 }

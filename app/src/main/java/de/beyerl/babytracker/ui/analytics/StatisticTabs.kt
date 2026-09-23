@@ -56,13 +56,13 @@ internal fun SleepTimesTab(data: AnalyticsData) {
 }
 
 /**
- * Tab "Gesamtschlaf": tracked sleep per night, the time awake in between
+ * Tab "Nachtschlaf": tracked sleep per night, the time awake in between
  * ("Wachphasen nachts") and Monday–Sunday averages of both below.
  */
 @Composable
 internal fun NightSleepTab(data: AnalyticsData) {
     HourChart(
-        title = "Gesamtschlaf",
+        title = "Nachtschlaf",
         caption = "Geschlafene Zeit von der Schlafenszeit bis zur Aufwachzeit am Folgetag, am Datum des Abends",
         dates = data.dates,
         minutes = data.nightSleep.sleep,
@@ -83,7 +83,7 @@ internal fun NightSleepTab(data: AnalyticsData) {
     )
     WeeklyAverageTable(
         columns = listOf(
-            WeeklyColumn("Gesamtschlaf", data.nightSleep.sleepWeeks),
+            WeeklyColumn("Nachtschlaf", data.nightSleep.sleepWeeks),
             WeeklyColumn("Wachphasen nachts", data.nightSleep.awakeWeeks),
         ),
         countText = { if (it == 1) "1 Nacht" else "$it Nächte" },
