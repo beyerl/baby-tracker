@@ -1,10 +1,17 @@
 package de.beyerl.babytracker.ui.analytics
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,8 +20,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,6 +41,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import de.beyerl.babytracker.BabyTrackerApp
+import de.beyerl.babytracker.reminder.ReminderPrefs
 import de.beyerl.babytracker.stats.DayForecast
 import de.beyerl.babytracker.stats.Forecast
 import de.beyerl.babytracker.stats.ForecastKind
@@ -71,6 +87,10 @@ internal fun ForecastTab(forecast: DayForecast?, now: Long) {
     }
 
     NapTotalPill(forecast.napMinutes)
+    Spacer(Modifier.height(16.dp))
+    FeedCountdownBanner(forecast, now)
+    Spacer(Modifier.height(12.dp))
+    ReminderCard(forecast, now)
     SectionSpacer()
     SectionTitle("Tagesablauf")
     ChartCard { Timeline(forecast, now) }
@@ -118,6 +138,118 @@ private fun NapTotalPill(minutes: Long) {
             Text("Nickerchen gesamt", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
             Text(formatCountdown(minutes), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
         }
+    }
+}
+
+/**
+ * "Füttern in 24 min ⏱ 12:15" with a bar filling up from the last feeding
+ * (or the wake-up) to the next predicted one, like Napper's nap banner.
+ */
+@Composable
+private fun FeedCountdownBanner(forecast: DayForecast, now: Long) {
+    val next = forecast.next(ForecastKind.FEED, now) ?: return
+    val since = forecast.feeds.lastOrNull { it.start <= now }?.start ?: forecast.wakeUp
+    val progress = ((now - since).toFloat() / (next.start - since).coerceAtLeast(1)).coerceIn(0f, 1f)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .padding(horizontal = 20.dp, vertical = 14.dp),
+    ) {
+        Text("🍼", style = MaterialTheme.typography.headlineMedium)
+        Spacer(Modifier.size(16.dp))
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "Füttern in ${formatCountdown(minutesUntil(next.start, now))}",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                Icon(Icons.Outlined.Timer, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.size(4.dp))
+                Text(formatTime(next.start), style = MaterialTheme.typography.titleMedium)
+            }
+            Spacer(Modifier.height(8.dp))
+            LinearProgressIndicator(
+                progress = { progress },
+                color = FeedColor,
+                trackColor = MaterialTheme.colorScheme.surfaceContainer,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+/**
+ * Reminder settings: on/off and the lead time, plus when the next reminder
+ * goes off. Switching on asks for the notification permission (Android 13+).
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ReminderCard(forecast: DayForecast, now: Long) {
+    val context = LocalContext.current
+    val prefs = remember { ReminderPrefs(context) }
+    var enabled by remember { mutableStateOf(prefs.enabled) }
+    var lead by remember { mutableStateOf(prefs.leadMinutes) }
+    fun apply() = (context.applicationContext as? BabyTrackerApp)?.rescheduleReminder()
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        prefs.enabled = granted
+        enabled = granted
+        apply()
+    }
+    fun setEnabled(on: Boolean) {
+        if (on && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            return
+        }
+        prefs.enabled = on
+        enabled = on
+        apply()
+    }
+
+    ChartCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Erinnerung vor dem Füttern", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Benachrichtigung, wenn das Baby laut Prognose gleich Hunger bekommt",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+            }
+            Switch(checked = enabled, onCheckedChange = ::setEnabled)
+        }
+        if (!enabled) return@ChartCard
+        Spacer(Modifier.height(8.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ReminderPrefs.LEAD_OPTIONS.forEach { minutes ->
+                FilterChip(
+                    selected = minutes == lead,
+                    onClick = {
+                        prefs.leadMinutes = minutes
+                        lead = minutes
+                        apply()
+                    },
+                    label = { Text(if (minutes == 0) "pünktlich" else "$minutes min vorher") },
+                )
+            }
+        }
+        val next = forecast.nextPredictedFeed(maxOf(now + lead * 60_000L, prefs.lastNotifiedFeed))
+        Text(
+            if (next != null) {
+                "Nächste Erinnerung um ${formatTime(next.start - lead * 60_000L)} (Fütterung um ${formatTime(next.start)})"
+            } else {
+                "Heute ist keine weitere Fütterung prognostiziert."
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.padding(top = 4.dp),
+        )
     }
 }
 

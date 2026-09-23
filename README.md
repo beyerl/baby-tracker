@@ -35,6 +35,10 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
     behalten ihren Abstand zum letzten Eintrag. Darstellung als Ring wie in Napper
     (Aufwachzeit → Schlafenszeit, erfasst = ausgefüllt, Prognose = gepunktet) mit
     Countdown zum nächsten Ereignis, Nickerchen-Gesamtdauer und Tagesablauf.
+    Darunter ein **Countdown-Banner** zur nächsten Fütterung und eine
+    **Erinnerung** (ein/aus, 0–30 min Vorlauf): Benachrichtigung „Baby bekommt
+    gleich Hunger" vor der nächsten prognostizierten Fütterung. Wird nach jedem
+    Eintrag, jeder Erinnerung und nach einem Neustart neu geplant.
   - **Schlafenszeiten**: Uhrzeit des Aufwachens und des Einschlafens pro Tag aus
     den Schlaf-Markierungen (Einschlafen nach Mitternacht zählt zum Vorabend).
   - **Nachtschlaf**: geschlafene Zeit pro Nacht – Summe aller Schlaf-Einträge

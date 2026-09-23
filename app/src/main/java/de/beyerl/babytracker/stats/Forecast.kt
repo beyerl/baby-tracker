@@ -43,6 +43,10 @@ data class DayForecast(
 
     /** The first item of [kind] still ahead at [now]. */
     fun next(kind: ForecastKind, now: Long): ForecastItem? = items.firstOrNull { it.kind == kind && it.start > now }
+
+    /** The first predicted (not yet logged) feeding starting after [time] – what a reminder is for. */
+    fun nextPredictedFeed(time: Long): ForecastItem? =
+        items.firstOrNull { it.kind == ForecastKind.FEED && !it.actual && it.start > time }
 }
 
 /**

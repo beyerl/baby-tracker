@@ -96,6 +96,19 @@ class ForecastTest {
     }
 
     @Test
+    fun nextPredictedFeed_skipsLoggedFeedings() {
+        val events = week +
+            sleep("2026-09-16T05:00", "2026-09-16T07:30", SleepMarker.WAKE_UP) +
+            feed("2026-09-16T08:40")
+
+        val f = Forecast.forDay(events, zone, today)!!
+
+        // The logged 08:40 feeding is never reminded of; the next predicted one is at 12:40.
+        assertEquals(at("2026-09-16T12:40"), f.nextPredictedFeed(at("2026-09-16T08:00"))?.start)
+        assertNull(f.nextPredictedFeed(at("2026-09-16T17:00")))
+    }
+
+    @Test
     fun predict_averagesPerOrdinal() {
         val predicted = Forecast.predict(listOf(listOf(10L to 2L, 20L to 4L), listOf(30L to 4L)))
 

@@ -13,8 +13,8 @@ android {
         applicationId = "de.beyerl.babytracker"
         minSdk = 26
         targetSdk = 34
-        versionCode = 18
-        versionName = "0.14.0"
+        versionCode = 19
+        versionName = "0.15.0"
         vectorDrawables { useSupportLibrary = true }
     }
 
