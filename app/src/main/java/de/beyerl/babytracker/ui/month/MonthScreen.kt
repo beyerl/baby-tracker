@@ -26,8 +26,12 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -71,6 +75,7 @@ fun MonthScreen(
     repository: EventRepository,
     onDayClick: (LocalDate) -> Unit,
     onAnalyticsClick: () -> Unit,
+    onSyncClick: () -> Unit,
 ) {
     val vm: MonthViewModel = viewModel(factory = MonthViewModel.Factory(repository))
     val month by vm.month.collectAsState()
@@ -93,6 +98,8 @@ fun MonthScreen(
             }
         }
     }
+
+    var menuOpen by remember { mutableStateOf(false) }
 
     // Number of events parsed from a picked file, awaiting the add/replace choice.
     var importCount by remember { mutableStateOf<Int?>(null) }
@@ -150,20 +157,46 @@ fun MonthScreen(
             TopAppBar(
                 title = { Text(title) },
                 actions = {
-                    IconButton(onClick = onAnalyticsClick) {
-                        Icon(Icons.Filled.ShowChart, contentDescription = "Auswertung")
-                    }
-                    IconButton(onClick = { exportLauncher.launch("baby-tracker-$today.xlsx") }) {
-                        Icon(Icons.Filled.FileDownload, contentDescription = "Als Excel exportieren")
-                    }
-                    IconButton(onClick = { importLauncher.launch(arrayOf(XLSX_MIME_TYPE)) }) {
-                        Icon(Icons.Filled.FileUpload, contentDescription = "Aus Excel importieren")
-                    }
                     IconButton(onClick = { vm.previousMonth() }) {
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Voriger Monat")
                     }
                     IconButton(onClick = { vm.nextMonth() }) {
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Nächster Monat")
+                    }
+                    IconButton(onClick = onAnalyticsClick) {
+                        Icon(Icons.Filled.ShowChart, contentDescription = "Auswertung")
+                    }
+                    // Less frequent actions in an overflow menu, so the month title keeps its room.
+                    Box {
+                        IconButton(onClick = { menuOpen = true }) {
+                            Icon(Icons.Filled.MoreVert, contentDescription = "Weitere Aktionen")
+                        }
+                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Synchronisierung") },
+                                leadingIcon = { Icon(Icons.Filled.Sync, contentDescription = null) },
+                                onClick = {
+                                    menuOpen = false
+                                    onSyncClick()
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Als Excel exportieren") },
+                                leadingIcon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
+                                onClick = {
+                                    menuOpen = false
+                                    exportLauncher.launch("baby-tracker-$today.xlsx")
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Aus Excel importieren") },
+                                leadingIcon = { Icon(Icons.Filled.FileUpload, contentDescription = null) },
+                                onClick = {
+                                    menuOpen = false
+                                    importLauncher.launch(arrayOf(XLSX_MIME_TYPE))
+                                },
+                            )
+                        }
                     }
                 },
             )

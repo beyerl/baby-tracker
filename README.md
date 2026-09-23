@@ -16,9 +16,9 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
   *weder noch* (Standard) – Grundlage der Schlaf-Statistiken. Sichtbar in der
   Tagesansicht.
 - Einträge bearbeiten und löschen.
-- **Excel-Export** (`.xlsx`) aller erfassten Daten über den Download-Button in der
+- **Excel-Export** (`.xlsx`) aller erfassten Daten über das Menü ⋮ der
   Monatsansicht – Speicherort per System-Dialog wählbar, ohne Zusatzberechtigungen.
-- **Excel-Import** (`.xlsx`) über den Upload-Button – Daten wahlweise **hinzufügen**
+- **Excel-Import** (`.xlsx`) über das Menü ⋮ – Daten wahlweise **hinzufügen**
   oder **ersetzen**. Liest das eigene Exportformat (Spalten Datum, Start, Ende,
   Kategorie, Notiz, Markierung); Dateien ohne Markierungs-Spalte bleiben lesbar.
 - **Auswertung** in Reitern (Pillen-Auswahl), alle mit gemeinsamem Zeitraum
@@ -58,9 +58,23 @@ Aktivitäten eines Babys: **Stuhlgang, Pinkeln, Füttern** und **Schlaffenster**
   - **Fütterungen**: durchschnittlicher Abstand zwischen zwei Fütterungen pro Tag
     (gezählt am Tag der späteren Fütterung; Abstände über 16 h gelten als
     Erfassungslücke) und Durchschnitt über den gesamten Zeitraum.
+- **Synchronisierung zwischen zwei Handys** direkt im heimischen WLAN – ohne Server,
+  Cloud oder Drittanbieter (Menü ⋮ → *Synchronisierung*):
+  - Einmalige **Kopplung per QR-Code**: ein Handy zeigt den Code (zufälliger
+    256-Bit-Schlüssel), das andere scannt ihn.
+  - Die Handys finden sich per mDNS/NSD (`_babytracker._tcp`) und tauschen in einer
+    Verbindung alle Einträge aus; verschlüsselt und authentifiziert mit
+    AES-256-GCM unter dem Kopplungsschlüssel.
+  - Jeder Eintrag hat eine eindeutige ID, einen Änderungszeitpunkt und ein
+    Gelöscht-Kennzeichen; bei Konflikten gewinnt die jüngere Änderung, auch
+    Löschungen werden übertragen.
+  - Synchronisiert beim Öffnen, nach jeder Änderung, alle 5 Minuten und per
+    *Jetzt synchronisieren*. Optional (Standard: an) bleibt ein Hintergrunddienst
+    mit stiller Benachrichtigung empfangsbereit, damit das andere Handy auch
+    abgleichen kann, wenn die App hier geschlossen ist.
 - **Dunkles Design** im Stil der Napper-App (Nachtblau, Lavendel-Akzent), unabhängig
   von System-Theme und Material-You-Farben.
-- Vollständig **offline**, lokale Speicherung via Room.
+- **Ohne Internet und Cloud**: lokale Speicherung via Room, Abgleich nur direkt im WLAN.
 
 ## Tech-Stack
 

@@ -21,6 +21,8 @@ import de.beyerl.babytracker.data.EventRepository
 import de.beyerl.babytracker.ui.analytics.AnalyticsScreen
 import de.beyerl.babytracker.ui.day.DayScreen
 import de.beyerl.babytracker.ui.month.MonthScreen
+import de.beyerl.babytracker.sync.SyncService
+import de.beyerl.babytracker.ui.sync.SyncScreen
 import de.beyerl.babytracker.ui.theme.BabyTrackerTheme
 import java.time.LocalDate
 
@@ -43,6 +45,18 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    // Sync runs while the app is visible; SyncService keeps it running in the background if enabled.
+    override fun onStart() {
+        super.onStart()
+        (application as BabyTrackerApp).sync.acquire()
+        SyncService.update(this)
+    }
+
+    override fun onStop() {
+        (application as BabyTrackerApp).sync.release()
+        super.onStop()
+    }
 }
 
 @Composable
@@ -62,7 +76,11 @@ fun AppRoot() {
                     navController.navigate("day/${date.toEpochDay()}")
                 },
                 onAnalyticsClick = { navController.navigate("analytics") },
+                onSyncClick = { navController.navigate("sync") },
             )
+        }
+        composable("sync") {
+            SyncScreen(onBack = { navController.popBackStack() })
         }
         composable("analytics") {
             AnalyticsScreen(

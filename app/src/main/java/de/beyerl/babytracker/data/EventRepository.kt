@@ -1,6 +1,7 @@
 package de.beyerl.babytracker.data
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
@@ -62,13 +63,26 @@ class EventRepository(private val dao: EventDao) {
     /** Adds imported events on top of the existing data. */
     suspend fun importAppend(events: List<Event>) = dao.insertAll(events)
 
-    /** Replaces all stored data with the imported events. */
+    /** Replaces all stored data with the imported events (the old ones become tombstones). */
     suspend fun importReplace(events: List<Event>) {
-        dao.deleteAll()
+        dao.deleteAll(System.currentTimeMillis())
         dao.insertAll(events)
     }
 
-    suspend fun update(event: Event) = dao.update(event)
+    suspend fun update(event: Event) = dao.update(event.copy(updatedAt = System.currentTimeMillis()))
 
-    suspend fun delete(event: Event) = dao.delete(event)
+    /** Keeps a tombstone so the deletion reaches the other phone. */
+    suspend fun delete(event: Event) =
+        dao.update(event.copy(deleted = true, updatedAt = System.currentTimeMillis()))
+
+    /** Every row including tombstones, for the sync. */
+    suspend fun getAllForSync(): List<Event> = dao.getAllForSync()
+
+    /** Merges the other phone's events; returns how many rows changed. */
+    suspend fun applyRemote(events: List<Event>): Int = dao.applyRemote(events)
+
+    suspend fun currentChangeStamp(): String = dao.observeChangeStamp().first()
+
+    /** Emits on every change, deletions included – a trigger for syncing. */
+    fun observeChanges(): Flow<String> = dao.observeChangeStamp()
 }

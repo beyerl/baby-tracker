@@ -8,7 +8,7 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [Event::class], version = 2, exportSchema = false)
+@Database(entities = [Event::class], version = 3, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun eventDao(): EventDao
@@ -28,13 +28,27 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v3 adds the sync fields: a random [Event.uuid] per existing row (unique
+         * index as Room declares it), [Event.updatedAt] = createdAt, not deleted.
+         */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE events ADD COLUMN uuid TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE events ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE events ADD COLUMN deleted INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("UPDATE events SET uuid = lower(hex(randomblob(16))), updatedAt = createdAt")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_events_uuid ON events (uuid)")
+            }
+        }
+
         fun get(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "baby-tracker.db"
-                ).addMigrations(MIGRATION_1_2).build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build().also { INSTANCE = it }
             }
     }
 }

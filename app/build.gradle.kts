@@ -13,8 +13,8 @@ android {
         applicationId = "de.beyerl.babytracker"
         minSdk = 26
         targetSdk = 34
-        versionCode = 19
-        versionName = "0.15.0"
+        versionCode = 20
+        versionName = "0.16.0"
         vectorDrawables { useSupportLibrary = true }
     }
 
@@ -69,6 +69,10 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+
+    // QR code for pairing the two phones (generated and scanned on the device, offline)
+    implementation(libs.zxing.core)
+    implementation(libs.zxing.android.embedded)
 
     debugImplementation(libs.androidx.ui.tooling)
 

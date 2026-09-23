@@ -6,6 +6,7 @@ import androidx.room.Room
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -34,7 +35,7 @@ class MigrationTest {
         createVersion1Database()
 
         val db = Room.databaseBuilder(context, AppDatabase::class.java, dbName)
-            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
             .build()
         try {
             val dao = db.eventDao()
@@ -51,6 +52,31 @@ class MigrationTest {
 
             runBlocking { dao.update(sleep.copy(sleepMarker = SleepMarker.BEDTIME)) }
             assertEquals(SleepMarker.BEDTIME, runBlocking { dao.getById(sleep.id) }?.sleepMarker)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun migrate2To3_addsUniqueUuidsAndKeepsEvents() {
+        createVersion1Database()
+
+        val db = Room.databaseBuilder(context, AppDatabase::class.java, dbName)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
+            .build()
+        try {
+            val dao = db.eventDao()
+            val events = runBlocking { dao.getAll() }
+            assertEquals(2, events.size)
+            assertEquals(2, events.map { it.uuid }.toSet().size)
+            assertTrue(events.all { it.uuid.length == 32 && !it.deleted })
+            assertEquals(3_000L, events.single { it.type == EventType.SLEEP }.updatedAt) // = createdAt
+
+            // A deleted event stays as a tombstone for the sync but disappears everywhere else.
+            val feed = events.single { it.type == EventType.FEED }
+            runBlocking { dao.update(feed.copy(deleted = true, updatedAt = 9_000L)) }
+            assertEquals(listOf(EventType.SLEEP), runBlocking { dao.getAll() }.map { it.type })
+            assertEquals(2, runBlocking { dao.getAllForSync() }.size)
         } finally {
             db.close()
         }
